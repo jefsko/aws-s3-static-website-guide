@@ -12,7 +12,7 @@ calculator.js
 
 ## Current guide version
 
-`v1.0.0`
+`v1.1.0`
 
 ## Main guide
 
@@ -20,12 +20,13 @@ Start here:
 
 [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md)
 
-The guide covers two paths:
+The guide uses shared S3 setup plus two paths:
 
 | Track | Name | Purpose |
 |---|---|---|
-| Track A | Minimal S3-only setup | Quick HTTP test using an S3 static website endpoint |
-| Track B | Recommended setup | HTTPS custom-domain setup using CloudFront, ACM, Cloudflare DNS, and S3 |
+| Shared setup | Required baseline | Create the S3 bucket and upload the static files |
+| Track A | Minimal S3-only setup | Optional quick HTTP test using an S3 static website endpoint |
+| Track B | Recommended setup | HTTPS custom-domain setup using CloudFront, ACM, Cloudflare DNS, and private S3 bucket access |
 
 ## Recommended final architecture
 
@@ -54,6 +55,34 @@ Short alias domain: calc.jeffskone.com
 Important note:
 
 The S3 bucket can be in `us-west-2`, which is a good West Coast / Seattle-area default. However, the ACM certificate used by CloudFront must be requested in `us-east-1`.
+
+
+## What changed in v1.1.0
+
+Version `v1.1.0` is an additive clarification update based on initial reader feedback.
+
+It clarifies:
+
+- Track B depends on the shared S3 bucket and upload steps.
+- Track B does not require the public S3 static website endpoint steps.
+- When to use Track A, Track B, or both.
+- How to choose dashes vs. periods in bucket names.
+- How to handle CloudFront OAC, behavior settings, TLS settings, deployment status, and bucket policy cleanup.
+- What should and should not work in the final recommended setup.
+
+## Repository name and description
+
+Recommended repository name:
+
+```text
+aws-s3-static-website-guide
+```
+
+Recommended GitHub repository description:
+
+```text
+Beginner-friendly guide for hosting a static website on AWS using S3, CloudFront, ACM, and Cloudflare DNS.
+```
 
 ## Repository contents
 
@@ -126,10 +155,11 @@ See [`CHANGELOG.md`](CHANGELOG.md) for notable changes.
 
 For the first run, follow the guide in this order:
 
-1. Complete Track A to verify the files work from S3.
-2. Complete Track B to add CloudFront, HTTPS, the ACM certificate, and Cloudflare DNS.
-3. Make the S3 bucket private again once CloudFront is working.
-4. Use CloudFront/custom domains as the final public URLs.
+1. Complete the shared setup: create the S3 bucket and upload the files.
+2. Optionally complete Track A if you want a quick HTTP-only S3 website endpoint test.
+3. Complete Track B to add CloudFront, HTTPS, the ACM certificate, and Cloudflare DNS.
+4. Make sure the S3 bucket is private once CloudFront is working.
+5. Use CloudFront/custom domains as the final public URLs.
 
 Final intended URLs:
 

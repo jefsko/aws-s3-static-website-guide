@@ -1,8 +1,8 @@
 # AWS S3 Static Website Quick Start
 
 **Filename:** `aws-s3-static-website-quick-start.md`  
-**Version:** `v1.0.0`  
-**Last updated:** 2026-06-30  
+**Version:** `v1.1.0`  
+**Last updated:** 2026-07-01  
 **Primary AWS Region for the S3 bucket:** `us-west-2` — US West (Oregon)  
 **Required AWS Region for CloudFront viewer certificates:** `us-east-1` — US East (N. Virginia)
 
@@ -21,31 +21,36 @@ Working example:
 ## Table of Contents
 
 1. [Summary](#1-summary)
-2. [Recommended setup](#2-recommended-setup)
-3. [Prerequisites](#3-prerequisites)
-4. [Project file structure](#4-project-file-structure)
-5. [Track A vs. Track B](#5-track-a-vs-track-b)
-6. [Bucket naming rules and domain-name matching](#6-bucket-naming-rules-and-domain-name-matching)
-7. [Custom domain options: S3-only vs. CloudFront](#7-custom-domain-options-s3-only-vs-cloudfront)
-8. [Certificates, wildcard certificates, and subdomain levels](#8-certificates-wildcard-certificates-and-subdomain-levels)
-9. [Track A: Create the S3 bucket](#9-track-a-create-the-s3-bucket)
-10. [Track A: Upload the website files](#10-track-a-upload-the-website-files)
-11. [Track A: Enable S3 static website hosting](#11-track-a-enable-s3-static-website-hosting)
-12. [Track A: Make the bucket publicly readable](#12-track-a-make-the-bucket-publicly-readable)
-13. [Track A: Test the S3 website endpoint](#13-track-a-test-the-s3-website-endpoint)
-14. [Track B: Request an ACM certificate for CloudFront](#14-track-b-request-an-acm-certificate-for-cloudfront)
-15. [Track B: Validate the ACM certificate using Cloudflare DNS](#15-track-b-validate-the-acm-certificate-using-cloudflare-dns)
-16. [Track B: Create the CloudFront distribution](#16-track-b-create-the-cloudfront-distribution)
-17. [Track B: Make S3 private again and allow only CloudFront](#17-track-b-make-s3-private-again-and-allow-only-cloudfront)
-18. [Track B: Add custom domains to CloudFront](#18-track-b-add-custom-domains-to-cloudfront)
-19. [Track B: Point Cloudflare DNS to CloudFront](#19-track-b-point-cloudflare-dns-to-cloudfront)
-20. [Track B: Test the final HTTPS custom domains](#20-track-b-test-the-final-https-custom-domains)
-21. [Updating the website after setup](#21-updating-the-website-after-setup)
-22. [Troubleshooting](#22-troubleshooting)
-23. [Optional alternatives outside AWS](#23-optional-alternatives-outside-aws)
-24. [Reference commands](#24-reference-commands)
-25. [Official references](#25-official-references)
-26. [Changelog](#26-changelog)
+2. [How to use this guide: shared setup, Track A, and Track B](#2-how-to-use-this-guide-shared-setup-track-a-and-track-b)
+3. [Recommended setup](#3-recommended-setup)
+4. [Prerequisites](#4-prerequisites)
+5. [Project file structure](#5-project-file-structure)
+6. [Track A vs. Track B](#6-track-a-vs-track-b)
+7. [Bucket naming rules and domain-name matching](#7-bucket-naming-rules-and-domain-name-matching)
+8. [Custom domain options: S3-only vs. CloudFront](#8-custom-domain-options-s3-only-vs-cloudfront)
+9. [Certificates, wildcard certificates, and subdomain levels](#9-certificates-wildcard-certificates-and-subdomain-levels)
+10. [Shared setup: Create the S3 bucket](#10-shared-setup-create-the-s3-bucket)
+11. [Shared setup: Upload the website files](#11-shared-setup-upload-the-website-files)
+12. [Track A: Enable S3 static website hosting](#12-track-a-enable-s3-static-website-hosting)
+13. [Track A: Make the bucket publicly readable](#13-track-a-make-the-bucket-publicly-readable)
+14. [Track A: Test the S3 website endpoint](#14-track-a-test-the-s3-website-endpoint)
+15. [Track B: Request an ACM certificate for CloudFront](#15-track-b-request-an-acm-certificate-for-cloudfront)
+16. [Track B: Validate the ACM certificate using Cloudflare DNS](#16-track-b-validate-the-acm-certificate-using-cloudflare-dns)
+17. [Track B: Create the CloudFront distribution](#17-track-b-create-the-cloudfront-distribution)
+18. [Track B: Make S3 private again and allow only CloudFront](#18-track-b-make-s3-private-again-and-allow-only-cloudfront)
+19. [Track B: Add custom domains to CloudFront](#19-track-b-add-custom-domains-to-cloudfront)
+20. [Track B: Point Cloudflare DNS to CloudFront](#20-track-b-point-cloudflare-dns-to-cloudfront)
+21. [Track B: Test the final HTTPS custom domains](#21-track-b-test-the-final-https-custom-domains)
+22. [Final access expectations and URL behavior](#22-final-access-expectations-and-url-behavior)
+23. [Updating the website after setup](#23-updating-the-website-after-setup)
+24. [Troubleshooting](#24-troubleshooting)
+25. [Optional alternatives outside AWS](#25-optional-alternatives-outside-aws)
+26. [Reference commands](#26-reference-commands)
+27. [Variables, ARNs, and placeholders reference](#27-variables-arns-and-placeholders-reference)
+28. [Recommended AWS tags](#28-recommended-aws-tags)
+29. [AWS and Cloudflare console UI drift note](#29-aws-and-cloudflare-console-ui-drift-note)
+30. [Official references](#30-official-references)
+31. [Changelog](#31-changelog)
 
 ---
 
@@ -97,7 +102,77 @@ Private S3 bucket: jefsko-calculator-site
 
 ---
 
-## 2. Recommended setup
+### What changed in v1.1.0
+
+This version clarifies the setup flow after reader feedback.
+
+The most important clarification is this:
+
+```text
+Track B is not a continuation of the public S3 website endpoint setup.
+Track B does reuse the same S3 bucket and uploaded files.
+```
+
+So the guide now separates the work into three phases:
+
+```text
+Shared setup
+  ↓
+Optional Track A: S3-only HTTP test
+  ↓
+Recommended Track B: CloudFront + HTTPS + private S3 bucket
+```
+
+---
+
+## 2. How to use this guide: shared setup, Track A, and Track B
+
+This guide uses “tracks,” but Track B is not completely independent from the earlier S3 steps.
+
+Both Track A and Track B start with the same shared setup:
+
+1. Create the S3 bucket.
+2. Upload `index.html`, `style.css`, and `calculator.js`.
+
+After that, choose your path:
+
+- If you want the fastest HTTP-only test, continue with Track A.
+- If you want the recommended HTTPS custom-domain setup, continue with Track B.
+
+For the final recommended Track B setup, **S3 static website hosting is not required**. CloudFront can use the regular S3 bucket origin with Origin Access Control, which lets the bucket remain private.
+
+### Which sections should I follow?
+
+| Topic | Applies to Track A? | Applies to Track B? | Notes |
+|---|---:|---:|---|
+| Create S3 bucket | Yes | Yes | Shared setup. |
+| Upload website files | Yes | Yes | Shared setup. |
+| Enable S3 static website hosting | Yes | No, not for the final recommended setup | Only needed for S3 website endpoint testing. |
+| Make bucket publicly readable | Yes | No, not for the final recommended setup | Track B should use CloudFront OAC and keep S3 private. |
+| Test S3 website endpoint | Yes | Optional | Useful only as a quick HTTP test. |
+| Request ACM certificate | No | Yes | Required for HTTPS custom domains. |
+| Create CloudFront distribution | No | Yes | Required for the recommended setup. |
+| Make S3 private again | Only if Track A was done first | Yes | Final Track B should not leave the bucket public. |
+| Add Cloudflare DNS records | No | Yes | Required for custom domains. |
+
+If you are following Track B from the beginning, you can skip the public S3 website endpoint test. If you are new to S3, Track A can still be a helpful temporary test before moving to the recommended CloudFront setup.
+
+### Recommended reading path
+
+For most readers, use this path:
+
+```text
+1. Read the Summary and Recommended setup.
+2. Complete Shared setup: create the bucket and upload files.
+3. Choose one path:
+   - Track A for a quick HTTP-only S3 test.
+   - Track B for the recommended HTTPS custom-domain setup.
+4. If you did Track A first, clean up public S3 access after Track B works.
+```
+
+---
+
+## 3. Recommended setup
 
 For your project, use this setup:
 
@@ -184,7 +259,9 @@ Official AWS docs say the same thing in a few places:
 
 ---
 
-## 3. Prerequisites
+---
+
+## 4. Prerequisites
 
 You need:
 
@@ -235,7 +312,9 @@ aws sts get-caller-identity
 
 ---
 
-## 4. Project file structure
+---
+
+## 5. Project file structure
 
 Keep the files in the root of the bucket:
 
@@ -277,7 +356,9 @@ calculator.js
 
 ---
 
-## 5. Track A vs. Track B
+---
+
+## 6. Track A vs. Track B
 
 ### Track A: Minimal S3-only setup
 
@@ -342,7 +423,37 @@ Appendices are better for deeper reference material, alternate providers, cleanu
 
 ---
 
-## 6. Bucket naming rules and domain-name matching
+### Shared setup dependency
+
+Track B is not a continuation of the public S3 website endpoint setup, but it does reuse the same S3 bucket and uploaded files.
+
+Use this distinction:
+
+```text
+Shared setup:
+- Create the bucket.
+- Upload files.
+
+Track A:
+- Enable S3 static website hosting.
+- Make the bucket public.
+- Test the S3 website endpoint.
+
+Track B:
+- Request ACM certificate.
+- Create CloudFront distribution.
+- Use Origin Access Control.
+- Point custom domains to CloudFront.
+- Keep or restore S3 bucket privacy.
+```
+
+If your goal is the recommended HTTPS custom-domain setup, complete the shared S3 bucket creation and file upload steps first. Then go to Track B.
+
+You do not need to complete the public S3 website endpoint steps unless you want a quick temporary test.
+
+---
+
+## 7. Bucket naming rules and domain-name matching
 
 Your chosen bucket name is:
 
@@ -469,7 +580,43 @@ This is one of the reasons CloudFront is the better final setup.
 
 ---
 
-## 7. Custom domain options: S3-only vs. CloudFront
+### Dashes vs. periods in bucket names
+
+A practical rule:
+
+```text
+Use dashes for normal S3 bucket names.
+Use periods only when you intentionally need the bucket name to exactly match an S3-only custom domain.
+```
+
+| Use case | Recommended bucket name style | Example |
+|---|---|---|
+| Recommended CloudFront setup | Dashes | `jefsko-calculator-site` |
+| S3-only custom domain for `calculator.jeffskone.com` | Periods, because exact hostname match is required | `calculator.jeffskone.com` |
+| General private S3 bucket | Dashes | `project-name-static-site` |
+| Bucket used with HTTPS virtual-hosted S3 requests | Avoid periods | `calculator-jeffskone-com` |
+
+For this guide’s recommended CloudFront setup, this is preferred:
+
+```text
+jefsko-calculator-site
+```
+
+over this:
+
+```text
+calculator.jeffskone.com
+```
+
+Why?
+
+Because the bucket does not need to match the custom domain when CloudFront is in front of S3. Also, AWS recommends avoiding periods in bucket names for best compatibility except for buckets used only for static website hosting. Periods can create HTTPS certificate-name matching issues with S3 virtual-hosted-style access.
+
+For S3-only custom-domain hosting, the period-based bucket name is not just style. It is what allows S3 to match the incoming hostname to the bucket.
+
+---
+
+## 8. Custom domain options: S3-only vs. CloudFront
 
 There are two main ways to connect a custom domain.
 
@@ -549,7 +696,9 @@ S3:
 
 ---
 
-## 8. Certificates, wildcard certificates, and subdomain levels
+---
+
+## 9. Certificates, wildcard certificates, and subdomain levels
 
 For HTTPS, the certificate must cover the hostname the visitor types into the browser.
 
@@ -779,7 +928,7 @@ Cloudflare DNS:
 
 ### My recommendation
 
-For v1.0.0 of this guide, use:
+For this guide, use:
 
 ```text
 calculator.jeffskone.com
@@ -801,9 +950,11 @@ You cannot add names to an existing ACM certificate. If you later want to add `*
 
 ---
 
-## 9. Track A: Create the S3 bucket
+---
 
-Track A creates the bucket and tests the site directly from S3.
+## 10. Shared setup: Create the S3 bucket
+
+This shared setup creates the S3 bucket used by both Track A and Track B.
 
 ### Step 1: Sign in to AWS
 
@@ -890,23 +1041,41 @@ Versioning is useful later, but it is not necessary for the first setup.
 
 ### Step 7: Tags
 
-Skip tags for now.
+Tags are optional for this small project, but they are useful once your AWS account has more resources.
 
-Optional future tags:
+For a beginner setup, either skip tags or add a few simple ones:
 
 ```text
 Project = CalculatorSite
 Environment = Test
+Owner = Jeff
+ManagedBy = Manual
+Purpose = StaticWebsite
 ```
+
+Do not put secrets, passwords, API keys, or sensitive personal information in tags. Tags are metadata and may be visible in places you do not expect.
 
 ---
 
-### Step 8: Default encryption
+### Step 8: Default encryption and Bucket Key
 
 Use the default:
 
 ```text
 Server-side encryption with Amazon S3 managed keys (SSE-S3)
+```
+
+You may also see a field named **Bucket Key** under encryption.
+
+For this guide, if you are using the default S3-managed encryption option, leave encryption settings at their defaults.
+
+S3 Bucket Keys mainly matter when using AWS KMS encryption, also called SSE-KMS. They can reduce AWS KMS request costs for KMS-encrypted objects. For this simple static website, the default S3-managed encryption setting is fine.
+
+Practical recommendation:
+
+```text
+Default encryption: SSE-S3 / Amazon S3 managed keys
+Bucket Key: leave default / not applicable unless using SSE-KMS
 ```
 
 ---
@@ -932,7 +1101,9 @@ If you change the bucket name, update every later command and policy that uses `
 
 ---
 
-## 10. Track A: Upload the website files
+---
+
+## 11. Shared setup: Upload the website files
 
 ### Step 1: Open the bucket
 
@@ -947,8 +1118,10 @@ jefsko-calculator-site
 
 ### Step 2: Upload files
 
+You can upload the files either by choosing **Add files** or by dragging and dropping the files into the upload area.
+
 1. Choose **Upload**.
-2. Choose **Add files**.
+2. Choose **Add files**, or drag and drop the files into the upload page.
 3. Select:
 
 ```text
@@ -987,7 +1160,9 @@ For this guide, they should be directly in the bucket root.
 
 ---
 
-## 11. Track A: Enable S3 static website hosting
+---
+
+## 12. Track A: Enable S3 static website hosting
 
 ### Step 1: Open the bucket Properties tab
 
@@ -1063,7 +1238,27 @@ At this point, the endpoint may still show an access error. That is expected unt
 
 ---
 
-## 12. Track A: Make the bucket publicly readable
+### What does static website hosting mean?
+
+S3 static website hosting is a special S3 feature that makes a bucket behave like a simple website server.
+
+When enabled, S3 provides a website endpoint and knows which file to serve as the home page, such as:
+
+```text
+index.html
+```
+
+When disabled, S3 is just object storage. The files still exist, but S3 does not expose a website endpoint for the bucket.
+
+Track A uses S3 static website hosting.
+
+Track B does not need S3 static website hosting for the final recommended setup because CloudFront can read from the regular S3 bucket origin using Origin Access Control.
+
+It is okay if static website hosting remains enabled after moving to Track B, but it is no longer the public path you should use. The final public path should be CloudFront and the custom domains.
+
+---
+
+## 13. Track A: Make the bucket publicly readable
 
 Warning:
 
@@ -1109,7 +1304,23 @@ Block all public access
 1. Stay on the **Permissions** tab.
 2. Find **Bucket policy**.
 3. Choose **Edit**.
-4. Paste this policy:
+4. Paste this policy.
+
+Important: this example uses your bucket name in an ARN. The object ARN pattern is:
+
+```text
+arn:aws:s3:::jefsko-calculator-site/*
+```
+
+The bucket ARN is:
+
+```text
+arn:aws:s3:::jefsko-calculator-site
+```
+
+The object ARN pattern adds `/*` to mean “all objects inside this bucket.”
+
+Paste this policy:
 
 ```json
 {
@@ -1132,7 +1343,9 @@ This allows anyone to read the files. It does not allow people to upload, edit, 
 
 ---
 
-## 13. Track A: Test the S3 website endpoint
+---
+
+## 14. Track A: Test the S3 website endpoint
 
 1. Go back to the bucket **Properties** tab.
 2. Scroll to **Static website hosting**.
@@ -1151,7 +1364,9 @@ You should see your calculator site.
 
 ---
 
-## 14. Track B: Request an ACM certificate for CloudFront
+---
+
+## 15. Track B: Request an ACM certificate for CloudFront
 
 Track B is the recommended final setup.
 
@@ -1254,7 +1469,7 @@ calc.jeffskone.com
 *.calc.jeffskone.com
 ```
 
-For v1.0.0, use the simpler exact-name certificate.
+Use the simpler exact-name certificate unless you already know you need wildcard subdomains.
 
 ---
 
@@ -1297,7 +1512,9 @@ That is expected.
 
 ---
 
-## 15. Track B: Validate the ACM certificate using Cloudflare DNS
+---
+
+## 16. Track B: Validate the ACM certificate using Cloudflare DNS
 
 ACM will give you DNS records to create.
 
@@ -1419,7 +1636,9 @@ Do not continue with CloudFront custom domains until the certificate is issued.
 
 ---
 
-## 16. Track B: Create the CloudFront distribution
+---
+
+## 17. Track B: Create the CloudFront distribution
 
 For the recommended setup, CloudFront should use the regular S3 bucket origin with Origin Access Control.
 
@@ -1433,7 +1652,7 @@ This is better than using the S3 website endpoint as the CloudFront origin.
 
 Important:
 
-For Track B, CloudFront does not need S3 static website hosting. It uses the regular S3 bucket origin.
+For Track B, CloudFront does **not** need S3 static website hosting. It uses the regular S3 bucket origin.
 
 ---
 
@@ -1448,21 +1667,53 @@ CloudFront
 2. Open **CloudFront**.
 3. Choose **Create distribution**.
 
+This starts the distribution creation wizard. You are not finished yet. Later, after you review all settings, you will choose **Create distribution** again to submit the configuration.
+
 ---
 
-### Step 2: Choose distribution type or app type
+### Step 2: Enter distribution name and description
 
-If the console asks what kind of distribution/app you are creating, choose something like:
+If CloudFront asks for a distribution name, use a short descriptive name.
+
+Recommended value:
+
+```text
+calculator-site
+```
+
+Other reasonable options:
+
+```text
+calculator-site-prod
+jefsko-calculator-site
+calculator-jeffskone-com
+```
+
+The distribution name is mostly for your own organization in the AWS Console. It does not have to match the domain name, but it should be easy to recognize later.
+
+If CloudFront asks for a description, use something like:
+
+```text
+Static calculator website for calculator.jeffskone.com and calc.jeffskone.com
+```
+
+The description is optional, but useful. Use it to remind yourself what the distribution serves and which domains point to it.
+
+---
+
+### Step 3: Choose distribution type or app type
+
+If the console asks what kind of distribution or app you are creating, choose something like:
 
 ```text
 Single website or app
 ```
 
-Continue to the next step.
+This is the normal choice for a simple static calculator site.
 
 ---
 
-### Step 3: Choose the origin
+### Step 4: Choose the origin
 
 For the origin:
 
@@ -1494,106 +1745,99 @@ jefsko-calculator-site.s3-website-us-west-2.amazonaws.com
 
 Why?
 
-The S3 website endpoint is public and HTTP-only. The regular S3 origin can be private and protected with Origin Access Control.
+The regular S3 bucket origin lets CloudFront use Origin Access Control. That allows CloudFront to read the bucket while keeping the bucket private from direct public access.
+
+The S3 website endpoint is public and HTTP-only. It must be configured as a custom origin and cannot use Origin Access Control.
 
 ---
 
-### Step 4: Use recommended origin settings
+### Step 5: Configure Origin Access Control
 
-If CloudFront offers:
-
-```text
-Use recommended origin settings
-```
-
-choose it.
-
-This should create or use Origin Access Control.
-
-Look for language like:
+The CloudFront console may present security settings during distribution creation. Depending on the current UI, you may see wording such as:
 
 ```text
+Enable security
+Origin access
 Origin Access Control
 OAC
+Use recommended origin settings
 Sign requests
-Recommended
 ```
 
-Use:
+For an S3 bucket origin, choose the option that lets CloudFront securely access the S3 bucket while keeping the bucket private.
+
+Recommended values:
 
 ```text
-Sign requests: Yes / recommended
+Origin access: Origin access control settings / OAC
+Signing behavior: Sign requests / Sign requests (recommended)
 ```
 
-If CloudFront offers to update the S3 bucket policy automatically, allow it.
+If CloudFront offers to update the S3 bucket policy automatically, allow it. If it does not, this guide includes a manual bucket policy later.
 
-If it does not, this guide includes a manual bucket policy later.
+Do not confuse OAC with AWS WAF security protections:
+
+```text
+OAC = how CloudFront privately accesses S3.
+WAF = optional web application firewall rules in front of CloudFront.
+```
+
+For this guide:
+
+```text
+Use OAC.
+Skip WAF initially unless you have a specific reason to enable it.
+```
+
+WAF can be useful, but it adds cost, complexity, and more settings. For a tiny static calculator site, it is reasonable to skip WAF initially and add it later if needed.
 
 ---
 
-### Step 5: Viewer protocol policy
+### Step 6: Configure behavior settings
 
-Set viewer protocol policy to:
+Some behavior settings may not be fully visible on the **Behaviors** tab until you edit the behavior.
 
-```text
-Redirect HTTP to HTTPS
-```
-
-This means:
+After creating or editing the distribution, you can check them here:
 
 ```text
-http://calculator.jeffskone.com
+CloudFront > Distributions > select distribution > Behaviors > select default behavior > Edit
 ```
 
-will redirect to:
+Recommended behavior values:
 
 ```text
-https://calculator.jeffskone.com
+Viewer protocol policy: Redirect HTTP to HTTPS
+Allowed HTTP methods: GET, HEAD
+Cache policy: CachingOptimized or the current AWS managed static-content default
 ```
 
----
+What these mean:
 
-### Step 6: Allowed HTTP methods
-
-For a simple static website, use:
-
-```text
-GET, HEAD
-```
-
-You do not need POST, PUT, PATCH, or DELETE.
-
----
-
-### Step 7: Cache policy
-
-Use a managed/default cache policy suitable for static content.
-
-A common choice is:
-
-```text
-CachingOptimized
-```
+- **Viewer protocol policy** controls whether visitors can use HTTP, HTTPS, or whether HTTP automatically redirects to HTTPS.
+- **Allowed HTTP methods** controls which request methods CloudFront accepts. For a static calculator site, only `GET` and `HEAD` are needed.
+- **Cache policy** controls how CloudFront caches files. Static files are a good fit for caching.
 
 If you are changing files frequently during early testing, caching can make updates look delayed. That is normal. You can invalidate the cache after uploading updates.
 
 ---
 
-### Step 8: Web Application Firewall
+### Step 7: Choose TLS / security policy settings
 
-If CloudFront asks about AWS WAF security protections, for this simple calculator site choose:
+If CloudFront asks for a TLS or security policy, choose the newest AWS-recommended TLS 1.2-or-newer policy shown in the console, unless you have a specific need to support very old browsers.
+
+Beginner recommendation:
 
 ```text
-Do not enable security protections
+Security policy / TLS policy: TLSv1.2_2021 or the current AWS recommended TLSv1.2+ policy
+Supported HTTP versions: HTTP/2 enabled if available
+SSL support method: SNI only
 ```
 
-Reason:
-
-WAF can be useful, but it can also add cost and complexity. You do not need it for the first version of a tiny static calculator site.
+Choose **SNI** if CloudFront asks how to serve HTTPS. SNI is the normal modern option and is recommended for most sites. Dedicated IP SSL is generally unnecessary and can add cost.
 
 ---
 
-### Step 9: Default root object
+### Step 8: Set the default root object
 
 Set:
 
@@ -1619,9 +1863,15 @@ Incorrect:
 
 ---
 
-### Step 10: Custom domain names
+### Step 9: Add Alternate domain name (CNAME) values if available
 
-If the create-distribution flow lets you add custom domain names now, add:
+If the create-distribution flow lets you add custom domains now, look for the AWS UI field named:
+
+```text
+Alternate domain name (CNAME)
+```
+
+Add:
 
 ```text
 calculator.jeffskone.com
@@ -1630,17 +1880,25 @@ calc.jeffskone.com
 
 Then choose the issued ACM certificate from `us-east-1`.
 
-If the create flow does not ask for custom domains yet, create the distribution first and add custom domains afterward in the distribution settings.
+AWS often calls these **alternate domain names** or **CNAMEs**. Casually, they are your custom domain names.
 
-Both flows are fine.
+If the create flow does not ask for alternate domain names yet, create the distribution first and add them afterward in the distribution settings. Both flows are fine.
 
 ---
 
-### Step 11: Create the distribution
+### Step 10: Review and finish creating the distribution
 
 1. Review the settings.
 2. Choose **Create distribution**.
 3. Wait for deployment.
+
+When you choose **Create distribution**, CloudFront creates the distribution configuration and begins deploying it globally. The distribution may show a status like:
+
+```text
+Deploying
+```
+
+CloudFront deployment can take several minutes. Sometimes it is quick; sometimes it takes longer. Wait until the distribution is deployed before assuming final behavior is ready.
 
 CloudFront will give you a distribution domain name like:
 
@@ -1654,12 +1912,12 @@ Do not use the example value above. Use your real CloudFront distribution domain
 
 ---
 
-### Step 12: Test the CloudFront distribution domain
+### Step 11: Test the CloudFront distribution domain
 
 After the distribution finishes deploying, test:
 
 ```text
-https://<your-cloudfront-domain-name>
+https://<DISTRIBUTION_DOMAIN>
 ```
 
 Example only:
@@ -1673,14 +1931,16 @@ You should see the calculator site.
 If the root URL does not work, try:
 
 ```text
-https://<your-cloudfront-domain-name>/index.html
+https://<DISTRIBUTION_DOMAIN>/index.html
 ```
 
 If `/index.html` works but `/` does not, check the CloudFront default root object.
 
+Yes, by default the CloudFront distribution domain usually works directly. That is normal. It is useful for testing before DNS is ready. If you want only your custom hostnames to work, see the optional advanced section on restricting the default CloudFront domain.
+
 ---
 
-## 17. Track B: Make S3 private again and allow only CloudFront
+## 18. Track B: Make S3 private again and allow only CloudFront
 
 If you completed Track A, your bucket is currently public.
 
@@ -1696,7 +1956,30 @@ not:
 Public internet → S3
 ```
 
-### Step 1: Remove the public-read bucket policy
+### Before and after
+
+Before Track B cleanup, your temporary Track A setup may look like this:
+
+```text
+Block all public access: Off
+Bucket policy: includes Principal "*" public-read statement
+S3 website endpoint: works
+CloudFront URL: may work
+Custom domain: may or may not work yet
+```
+
+After Track B cleanup, the recommended final setup should look like this:
+
+```text
+Block all public access: On
+Bucket policy: no Principal "*" public-read statement
+Bucket policy: may include CloudFront OAC allow statement
+S3 website endpoint: should not work publicly
+CloudFront distribution domain: works unless separately blocked
+Custom domains: work
+```
+
+### Step 1: Remove the public-read bucket policy statement
 
 1. Open S3.
 2. Open the bucket:
@@ -1708,7 +1991,9 @@ jefsko-calculator-site
 3. Go to **Permissions**.
 4. Find **Bucket policy**.
 5. Choose **Edit**.
-6. Remove the public-read statement:
+6. Remove the entire public-read statement, not just one line.
+
+The public-read statement looks like this:
 
 ```json
 {
@@ -1720,32 +2005,27 @@ jefsko-calculator-site
 }
 ```
 
-7. Save the policy.
+If that statement is inside a larger policy, remove the whole statement object and make sure the remaining JSON is still valid.
 
-If CloudFront already added an OAC policy, leave that policy in place.
+If that was the only statement in the policy, the final policy may either be blank or replaced by the CloudFront OAC policy shown below.
 
----
+Important:
 
-### Step 2: Turn Block Public Access back on
+The final bucket policy should not contain a public-read statement with:
 
-1. Stay on the S3 bucket **Permissions** tab.
-2. Find **Block public access (bucket settings)**.
-3. Choose **Edit**.
-4. Turn on:
-
-```text
-Block all public access
+```json
+"Principal": "*"
 ```
 
-5. Save changes.
+for `s3:GetObject` access to your website files.
 
-The old S3 website endpoint may stop working. That is expected.
+### Step 2: Keep or add the CloudFront OAC allow statement
 
-The CloudFront URL should keep working.
+The final bucket policy might be blank only if CloudFront/AWS is managing access another way or if no policy is currently needed.
 
----
+In the typical OAC setup, the bucket policy is not blank. It contains a statement that allows the CloudFront service principal to read objects from this bucket for this specific distribution.
 
-### Step 3: Manual OAC bucket policy fallback
+If CloudFront already added an OAC policy, leave that policy in place.
 
 If CloudFront did not automatically update the bucket policy, add a policy like this.
 
@@ -1788,9 +2068,34 @@ arn:aws:cloudfront::123456789012:distribution/E1ABCDEF234567
 
 Do not use the example values.
 
+### Step 3: Turn Block Public Access back on
+
+1. Stay on the S3 bucket **Permissions** tab.
+2. Find **Block public access (bucket settings)**.
+3. Choose **Edit**.
+4. Turn on:
+
+```text
+Block all public access
+```
+
+5. Save changes.
+
+The old S3 website endpoint should stop working publicly. That is expected.
+
+The CloudFront URL and custom domains should keep working because CloudFront is allowed through OAC.
+
+### Common point of confusion
+
+Turning Block Public Access back on does not automatically mean the CloudFront custom domain stops working. That is the goal. CloudFront should still work because it is allowed through OAC.
+
+What should stop working is direct public access to S3.
+
+If the S3 website endpoint still works after Track B cleanup, check whether the public-read bucket policy statement is still present.
+
 ---
 
-## 18. Track B: Add custom domains to CloudFront
+## 19. Track B: Add custom domains to CloudFront
 
 If you did not add custom domains during distribution creation, add them now.
 
@@ -1802,14 +2107,15 @@ If you did not add custom domains during distribution creation, add them now.
 
 ---
 
-### Step 2: Edit alternate domain names
+### Step 2: Edit Alternate domain name (CNAME) values
 
 Look for:
 
 ```text
+Alternate domain name (CNAME)
 Alternate domain names
-Custom domain names
 CNAMEs
+Custom domain names
 ```
 
 Add:
@@ -1858,7 +2164,9 @@ Wait for the distribution to deploy.
 
 ---
 
-## 19. Track B: Point Cloudflare DNS to CloudFront
+---
+
+## 20. Track B: Point Cloudflare DNS to CloudFront
 
 Now create DNS records in Cloudflare.
 
@@ -1957,7 +2265,9 @@ and make sure CloudFront still has a valid certificate for the hostname.
 
 ---
 
-## 20. Track B: Test the final HTTPS custom domains
+---
+
+## 21. Track B: Test the final HTTPS custom domains
 
 Test these in a browser:
 
@@ -2007,7 +2317,71 @@ You should see the names resolving toward CloudFront.
 
 ---
 
-## 21. Updating the website after setup
+---
+
+## 22. Final access expectations and URL behavior
+
+For the final recommended Track B setup, your intended public URLs are:
+
+```text
+https://calculator.jeffskone.com
+https://calc.jeffskone.com
+```
+
+Use this matrix to understand what should and should not work:
+
+| URL | Should work in final recommended Track B? | Notes |
+|---|---:|---|
+| `https://calculator.jeffskone.com` | Yes | Primary final URL. |
+| `https://calc.jeffskone.com` | Yes | Short alias final URL. |
+| `https://<DISTRIBUTION_DOMAIN>` | Yes by default | CloudFront provides this domain for every distribution. You can block it only with optional advanced Host-header logic. |
+| `http://<bucket>.s3-website-us-west-2.amazonaws.com` | No, if bucket is private | This should stop working after public access is removed. |
+| Direct S3 object URL | No, if bucket is private | CloudFront should be the access path. |
+
+For the final recommended setup, the S3 website endpoint should not be the public site anymore.
+
+The CloudFront distribution domain may still work by default. That is normal. If you want only your custom domains to work, that requires an optional advanced restriction.
+
+### Optional advanced hardening: restrict the default CloudFront domain
+
+Beginner recommendation:
+
+```text
+Leave the CloudFront distribution domain working.
+```
+
+Reason:
+
+- It is normal CloudFront behavior.
+- It helps with testing.
+- It is usually not a problem for a small static site.
+
+If you have a strong reason to allow only these hostnames:
+
+```text
+calculator.jeffskone.com
+calc.jeffskone.com
+```
+
+and reject this hostname:
+
+```text
+d111111abcdef8.cloudfront.net
+```
+
+you can add optional Host-header logic with CloudFront Functions or AWS WAF.
+
+| Option | Result | Recommendation |
+|---|---|---|
+| Leave it alone | Both custom domains and CloudFront distribution domain work | Best beginner default. |
+| CloudFront Function | Reject requests unless Host is approved | Good optional advanced option. |
+| AWS WAF rule | More policy-style control | Usually more than this small site needs. |
+
+This guide does not make that restriction part of the main path because it adds complexity. The main security goal is to block direct public S3 access and use CloudFront as the public front door.
+
+---
+
+## 23. Updating the website after setup
 
 When you change your website files, upload them again.
 
@@ -2055,7 +2429,9 @@ aws cloudfront create-invalidation --distribution-id <DISTRIBUTION_ID> --paths "
 
 ---
 
-## 22. Troubleshooting
+---
+
+## 24. Troubleshooting
 
 ### Problem: S3 website endpoint says 403 Access Denied
 
@@ -2237,7 +2613,88 @@ For a tiny site, invalidating everything is simple and fine.
 
 ---
 
-## 23. Optional alternatives outside AWS
+---
+
+### Problem: I cannot find Viewer protocol policy or Allowed HTTP methods
+
+These settings are part of a CloudFront behavior.
+
+Try this path:
+
+```text
+CloudFront > Distributions > select distribution > Behaviors > select default behavior > Edit
+```
+
+Set:
+
+```text
+Viewer protocol policy: Redirect HTTP to HTTPS
+Allowed HTTP methods: GET, HEAD
+```
+
+The Behaviors tab may show only a summary. To confirm the exact settings, select the default behavior and choose **Edit**.
+
+---
+
+### Problem: I cannot find Origin Access Control
+
+Look for wording such as:
+
+```text
+Origin access
+Origin Access Control
+OAC
+Origin access control settings
+Use recommended origin settings
+Sign requests
+```
+
+For this guide, the important idea is:
+
+```text
+Use a regular S3 bucket origin.
+Use OAC.
+Use Sign requests / Sign requests (recommended).
+```
+
+Do not use the S3 website endpoint as the origin if you want OAC.
+
+---
+
+### Problem: The S3 website endpoint still works after I turned Block Public Access back on
+
+Check the bucket policy.
+
+If the policy still contains this type of statement, direct public S3 access may still be allowed:
+
+```json
+{
+  "Principal": "*",
+  "Action": "s3:GetObject"
+}
+```
+
+For final Track B, remove the entire public-read statement. Leave only the CloudFront OAC allow statement, if needed.
+
+---
+
+### Problem: The CloudFront distribution domain still works directly
+
+That is normal.
+
+CloudFront gives every distribution a domain like:
+
+```text
+d111111abcdef8.cloudfront.net
+```
+
+By default, that domain works. It is useful for testing before your custom DNS records are ready.
+
+If you want only the custom hostnames to work, use optional advanced Host-header logic with CloudFront Functions or AWS WAF.
+
+---
+
+## 25. Optional alternatives outside AWS
 
 This guide uses AWS because the goal is to host on AWS.
 
@@ -2351,7 +2808,9 @@ Use ACM unless you have a specific reason not to.
 
 ---
 
-## 24. Reference commands
+---
+
+## 26. Reference commands
 
 These commands are optional. The AWS Console steps above are friendlier for beginners.
 
@@ -2532,7 +2991,92 @@ aws cloudfront create-invalidation --distribution-id <DISTRIBUTION_ID> --paths "
 
 ---
 
-## 25. Official references
+---
+
+## 27. Variables, ARNs, and placeholders reference
+
+Use this table when replacing placeholders in commands, policies, or examples.
+
+| Placeholder / value | Meaning | Example | Where to find it |
+|---|---|---|---|
+| `<BUCKET_NAME>` | Your S3 bucket name | `jefsko-calculator-site` | S3 > Buckets |
+| `<BUCKET_ARN>` | ARN for the bucket itself | `arn:aws:s3:::jefsko-calculator-site` | S3 bucket Properties or construct from bucket name |
+| `<OBJECTS_ARN>` | ARN pattern for all objects in the bucket | `arn:aws:s3:::jefsko-calculator-site/*` | Construct from bucket ARN by adding `/*` |
+| `<AWS_REGION>` | S3 bucket region | `us-west-2` | S3 bucket Properties |
+| `<CERT_REGION>` | ACM certificate region for CloudFront | `us-east-1` | AWS Console region selector in ACM |
+| `<CERTIFICATE_ARN>` | ARN of ACM certificate | `arn:aws:acm:us-east-1:...` | ACM certificate details |
+| `<DISTRIBUTION_ID>` | CloudFront distribution ID | `E1ABCDEF234567` | CloudFront distribution list/details |
+| `<DISTRIBUTION_DOMAIN>` | CloudFront assigned domain | `d111111abcdef8.cloudfront.net` | CloudFront distribution details |
+| `<ACCOUNT_ID>` | AWS account ID | `123456789012` | AWS account menu or `aws sts get-caller-identity` |
+| `<PRIMARY_DOMAIN>` | Main custom domain | `calculator.jeffskone.com` | User-defined |
+| `<ALIAS_DOMAIN>` | Short alias hostname | `calc.jeffskone.com` | User-defined |
+
+### Bucket ARN vs. object ARN
+
+The bucket ARN refers to the bucket itself:
+
+```text
+arn:aws:s3:::jefsko-calculator-site
+```
+
+The object ARN pattern refers to every object inside the bucket:
+
+```text
+arn:aws:s3:::jefsko-calculator-site/*
+```
+
+The `/*` means “all objects inside this bucket.”
+
+When granting read access to website files, the object ARN pattern is usually the value you need.
+
+---
+
+## 28. Recommended AWS tags
+
+Tags are optional for this small project, but they are a good habit.
+
+Tags help you identify and organize resources later, especially when your AWS account starts to contain more buckets, distributions, certificates, or test resources.
+
+Recommended simple tags:
+
+| Key | Value |
+|---|---|
+| `Project` | `CalculatorSite` |
+| `Environment` | `Production` or `Test` |
+| `Owner` | `Jeff` |
+| `ManagedBy` | `Manual` |
+| `Purpose` | `StaticWebsite` |
+
+You can use tags on resources such as:
+
+- S3 buckets.
+- CloudFront distributions.
+- ACM certificates, if the console offers tag fields.
+
+Do not put secrets, passwords, API keys, or sensitive personal information in tags. Tags are metadata and may be visible in places you do not expect.
+
+---
+
+## 29. AWS and Cloudflare console UI drift note
+
+AWS and Cloudflare console labels may change over time.
+
+If the exact field name differs, look for the closest equivalent. This guide tries to include the visible label, the AWS/Cloudflare concept name, and the reason for the setting.
+
+| Concept | Possible UI labels |
+|---|---|
+| Alternate domain names | Alternate domain name (CNAME), CNAMEs, Custom domain names |
+| OAC | Origin Access Control, Origin access, Origin access control settings, Use recommended origin settings |
+| Viewer protocol policy | Redirect HTTP to HTTPS, Viewer protocol policy |
+| WAF/security | Enable security, Security protections, Web Application Firewall |
+| TLS policy | Security policy, TLS policy, Minimum TLS version |
+| Distribution name | Distribution name, Name tag, Name |
+
+When in doubt, match the concept and reason, not only the exact label.
+
+---
+
+## 30. Official references
 
 AWS S3 static website hosting:
 
@@ -2564,10 +3108,34 @@ AWS S3 bucket naming rules:
 https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html
 ```
 
+AWS S3 Bucket Keys:
+
+```text
+https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html
+```
+
+AWS S3 Block Public Access:
+
+```text
+https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
+```
+
+AWS CloudFront create a distribution:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-creating-console.html
+```
+
 AWS CloudFront getting started with S3 and OAC:
 
 ```text
 https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/GettingStarted.SimpleDistribution.html
+```
+
+AWS CloudFront testing a distribution:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-testing.html
 ```
 
 AWS CloudFront alternate domain names:
@@ -2600,6 +3168,42 @@ AWS CloudFront Origin Access Control for S3:
 https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
 ```
 
+AWS CloudFront HTTPS from viewers:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-https-viewers-to-cloudfront.html
+```
+
+AWS CloudFront cache behavior settings:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesCacheBehavior.html
+```
+
+AWS CloudFront invalidations:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html
+```
+
+AWS CloudFront SNI vs. dedicated IP SSL:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-https-dedicated-ip-or-sni.html
+```
+
+AWS CloudFront Functions:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html
+```
+
+AWS CloudFront Functions event structure:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/functions-event-structure.html
+```
+
 AWS Certificate Manager overview:
 
 ```text
@@ -2622,6 +3226,12 @@ AWS wildcard certificate behavior:
 
 ```text
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html
+```
+
+AWS Tag Editor and resource tagging:
+
+```text
+https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html
 ```
 
 Cloudflare DNS record management:
@@ -2662,46 +3272,52 @@ https://developers.cloudflare.com/pages/configuration/custom-domains/
 
 ---
 
-## 26. Changelog
+## 31. Changelog
 
-### v1.0.0 - 2026-06-30
+### v1.1.0 - 2026-07-01
 
-Additive update from the initial draft.
+Additive clarification update based on initial reader feedback.
 
 Added:
 
-- Versioned document header.
-- Table of contents.
-- Expanded summary.
-- Clear Track A vs. Track B distinction.
-- Direct explanation of whether an S3 bucket must match a custom domain.
-- Explanation that S3-only custom domains require matching bucket names.
-- Explanation that CloudFront custom domains do not require matching bucket names.
-- Expanded custom-domain examples for:
-  - `calculator.jeffskone.com`
-  - `calc.jeffskone.com`
-- Expanded AWS ACM certificate guidance.
-- Wildcard certificate examples.
-- Subdomain-level examples.
-- Explanation for `*.calc.jeffskone.com`.
-- Explanation of why `*.*.jeffskone.com` is not the right solution.
-- CloudFront Track B setup.
-- ACM certificate request steps in `us-east-1`.
-- Added a plain-English explanation of why CloudFront viewer certificates must be requested in `us-east-1` even when the S3 bucket is in `us-west-2`.
-- Cloudflare DNS validation steps.
-- CloudFront Origin Access Control guidance.
-- Steps to make the S3 bucket private again after Track A.
-- Cloudflare custom-domain DNS steps.
-- Optional outside-AWS alternatives.
-- Reference commands.
-- Official reference section.
+- Clear “How to Use This Guide” section.
+- Shared setup explanation for Track A and Track B.
+- Table showing which topics apply to Track A, Track B, or both.
+- Clarification that Track B needs the S3 bucket and uploaded files, but not the public S3 website endpoint steps.
+- Expanded dashes vs. periods bucket naming guidance.
+- AWS tag guidance.
+- S3 Bucket Key explanation.
+- Drag-and-drop upload option.
+- Expanded static website hosting enable/disable explanation.
+- Variables, placeholders, ARNs, and where to find values.
+- Expanded CloudFront distribution name, description, origin, OAC, behavior, TLS, and deployment guidance.
+- Clearer “Alternate domain name (CNAME)” terminology.
+- Explicit public S3 bucket policy cleanup guidance.
+- Final access expectations and URL behavior matrix.
+- Optional advanced note about restricting the default CloudFront distribution domain.
+- Additional troubleshooting entries.
+- Additional official references.
 
-Recommended final setup:
+### v1.0.0 - 2026-06-30
 
-```text
-Cloudflare DNS
-  ↓
-CloudFront with HTTPS
-  ↓
-Private S3 bucket in us-west-2
-```
+Initial complete version.
+
+Added:
+
+- Summary.
+- Prerequisites.
+- Track A and Track B explanation.
+- Bucket naming guidance.
+- S3 Console setup steps.
+- Upload steps.
+- Static website hosting steps.
+- Public-read bucket policy.
+- Testing steps.
+- Troubleshooting.
+- Optional AWS CLI upload commands.
+- CloudFront, ACM, and Cloudflare setup.
+- Wildcard certificate and subdomain-level guidance.
+- Origin Access Control guidance.
+- Official references.
+
+---

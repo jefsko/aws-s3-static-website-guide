@@ -21,8 +21,37 @@ Suggested meaning:
 
 ### Added
 
-- `README.md` for repository overview, setup context, and links to the main guide.
-- `CHANGELOG.md` for version history and notable documentation changes.
+- Nothing yet.
+
+## [1.1.0] - 2026-07-01
+
+### Added
+
+- Clear shared setup explanation for Track A and Track B.
+- Section guidance showing which steps apply to Track A, Track B, or both.
+- Clarification that Track B needs the S3 bucket and uploaded files, but does not require the public S3 website endpoint steps.
+- Expanded dashes vs. periods bucket naming guidance.
+- Optional AWS tags guidance.
+- S3 Bucket Key explanation.
+- Drag-and-drop upload guidance.
+- Static website hosting enable/disable explanation.
+- Variables, placeholders, ARNs, and where to find values.
+- Expanded CloudFront distribution guidance for name, description, origin choice, OAC, behaviors, TLS policy, deployment status, and the default CloudFront distribution domain.
+- Clearer Alternate domain name (CNAME) terminology.
+- Final access expectations and URL behavior matrix.
+- Optional advanced note about restricting the default CloudFront domain.
+- Additional troubleshooting entries and official references.
+
+### Changed
+
+- Reframed the guide flow as shared setup plus optional Track A and recommended Track B.
+- Renamed the S3 bucket creation and upload sections as shared setup because both tracks use them.
+- Clarified public-read bucket policy cleanup for the final CloudFront/OAC/private-bucket setup.
+
+### Notes
+
+- This is an additive update from `v1.0.0`.
+- No existing version history was removed.
 
 ## [1.0.0] - 2026-06-30
 
