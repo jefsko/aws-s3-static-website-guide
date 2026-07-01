@@ -1,7 +1,7 @@
 # AWS S3 Static Website Quick Start
 
 **Filename:** `aws-s3-static-website-quick-start.md`  
-**Version:** `v1.1.0`  
+**Version:** `v1.2.0`  
 **Last updated:** 2026-07-01  
 **Primary AWS Region for the S3 bucket:** `us-west-2` — US West (Oregon)  
 **Required AWS Region for CloudFront viewer certificates:** `us-east-1` — US East (N. Virginia)
@@ -42,15 +42,16 @@ Working example:
 20. [Track B: Point Cloudflare DNS to CloudFront](#20-track-b-point-cloudflare-dns-to-cloudfront)
 21. [Track B: Test the final HTTPS custom domains](#21-track-b-test-the-final-https-custom-domains)
 22. [Final access expectations and URL behavior](#22-final-access-expectations-and-url-behavior)
-23. [Updating the website after setup](#23-updating-the-website-after-setup)
-24. [Troubleshooting](#24-troubleshooting)
-25. [Optional alternatives outside AWS](#25-optional-alternatives-outside-aws)
-26. [Reference commands](#26-reference-commands)
-27. [Variables, ARNs, and placeholders reference](#27-variables-arns-and-placeholders-reference)
-28. [Recommended AWS tags](#28-recommended-aws-tags)
-29. [AWS and Cloudflare console UI drift note](#29-aws-and-cloudflare-console-ui-drift-note)
-30. [Official references](#30-official-references)
-31. [Changelog](#31-changelog)
+23. [Access control deep dive: S3, CloudFront, and custom domains](#23-access-control-deep-dive-s3-cloudfront-and-custom-domains)
+24. [Updating the website after setup](#24-updating-the-website-after-setup)
+25. [Troubleshooting](#25-troubleshooting)
+26. [Optional alternatives outside AWS](#26-optional-alternatives-outside-aws)
+27. [Reference commands](#27-reference-commands)
+28. [Variables, ARNs, and placeholders reference](#28-variables-arns-and-placeholders-reference)
+29. [Recommended AWS tags](#29-recommended-aws-tags)
+30. [AWS and Cloudflare console UI drift note](#30-aws-and-cloudflare-console-ui-drift-note)
+31. [Official references](#31-official-references)
+32. [Changelog](#32-changelog)
 
 ---
 
@@ -99,6 +100,22 @@ Amazon CloudFront
   ↓
 Private S3 bucket: jefsko-calculator-site
 ```
+
+---
+
+### What changed in v1.2.0
+
+This version expands the CloudFront and S3 access-control guidance.
+
+The most important clarification is this:
+
+```text
+For the recommended final setup, CloudFront should use a normal S3 bucket origin with OAC.
+S3 Static website hosting should be disabled unless you intentionally need the S3 website endpoint.
+The custom domain should point to CloudFront, not directly to S3.
+```
+
+This version also adds more detail about Cloudflare CNAME records, ACM validation records, CloudFront default root object behavior, custom error responses, CloudFront Functions, and how to test whether direct S3 access and the default CloudFront domain are working or blocked.
 
 ---
 
@@ -199,6 +216,40 @@ Important AWS region detail:
 
 This is not a Seattle/West Coast preference issue. It is an AWS CloudFront requirement. CloudFront viewer certificates from AWS Certificate Manager must be requested or imported in `us-east-1`.
 
+
+### Recommended final access-control target
+
+For the recommended final Track B setup, aim for this state:
+
+| Area | Recommended final setting |
+|---|---|
+| S3 Static website hosting | Disabled, unless you intentionally need S3 website endpoint behavior |
+| S3 Block Public Access | Enabled |
+| S3 bucket policy | No public-read statement; allow only the CloudFront distribution through OAC |
+| CloudFront origin | Normal S3 bucket origin, not the S3 website endpoint |
+| CloudFront Default root object | `index.html` |
+| Cloudflare website DNS records | Point custom hostnames to the CloudFront distribution domain |
+| Cloudflare ACM validation records | DNS only |
+| CloudFront standard distribution domain | Works by default; optionally block with CloudFront Function |
+
+The recommended mental model is:
+
+```text
+User
+  ↓
+https://calculator.jeffskone.com or https://calc.jeffskone.com
+  ↓
+Cloudflare DNS
+  ↓
+CloudFront distribution
+  ↓
+OAC-signed request
+  ↓
+Private S3 bucket origin
+```
+
+---
+
 ### Why is the CloudFront certificate in `us-east-1` if the bucket is in `us-west-2`?
 
 This is confusing at first because most AWS services feel regional.
@@ -259,7 +310,6 @@ Official AWS docs say the same thing in a few places:
 
 ---
 
----
 
 ## 4. Prerequisites
 
@@ -312,7 +362,6 @@ aws sts get-caller-identity
 
 ---
 
----
 
 ## 5. Project file structure
 
@@ -356,7 +405,6 @@ calculator.js
 
 ---
 
----
 
 ## 6. Track A vs. Track B
 
@@ -696,7 +744,6 @@ S3:
 
 ---
 
----
 
 ## 9. Certificates, wildcard certificates, and subdomain levels
 
@@ -950,7 +997,6 @@ You cannot add names to an existing ACM certificate. If you later want to add `*
 
 ---
 
----
 
 ## 10. Shared setup: Create the S3 bucket
 
@@ -1101,7 +1147,6 @@ If you change the bucket name, update every later command and policy that uses `
 
 ---
 
----
 
 ## 11. Shared setup: Upload the website files
 
@@ -1160,7 +1205,6 @@ For this guide, they should be directly in the bucket root.
 
 ---
 
----
 
 ## 12. Track A: Enable S3 static website hosting
 
@@ -1254,7 +1298,9 @@ Track A uses S3 static website hosting.
 
 Track B does not need S3 static website hosting for the final recommended setup because CloudFront can read from the regular S3 bucket origin using Origin Access Control.
 
-It is okay if static website hosting remains enabled after moving to Track B, but it is no longer the public path you should use. The final public path should be CloudFront and the custom domains.
+For the clean final recommended setup, disable S3 Static website hosting after CloudFront is working unless you intentionally need S3 website endpoint features such as S3 website redirects or S3 folder-style index behavior.
+
+Disabling S3 Static website hosting does **not** delete your files and does **not** disable CloudFront. It only disables the S3 website endpoint behavior. CloudFront can still serve the same static files from the normal private S3 bucket origin.
 
 ---
 
@@ -1343,7 +1389,6 @@ This allows anyone to read the files. It does not allow people to upload, edit, 
 
 ---
 
----
 
 ## 14. Track A: Test the S3 website endpoint
 
@@ -1364,7 +1409,6 @@ You should see your calculator site.
 
 ---
 
----
 
 ## 15. Track B: Request an ACM certificate for CloudFront
 
@@ -1512,7 +1556,6 @@ That is expected.
 
 ---
 
----
 
 ## 16. Track B: Validate the ACM certificate using Cloudflare DNS
 
@@ -1636,7 +1679,6 @@ Do not continue with CloudFront custom domains until the certificate is issued.
 
 ---
 
----
 
 ## 17. Track B: Create the CloudFront distribution
 
@@ -2164,7 +2206,6 @@ Wait for the distribution to deploy.
 
 ---
 
----
 
 ## 20. Track B: Point Cloudflare DNS to CloudFront
 
@@ -2241,9 +2282,9 @@ TTL: Auto
 
 ---
 
-### Step 4: Why DNS only?
+### Step 4: Why DNS only at first?
 
-Use **DNS only** at first.
+Use **DNS only** for the website CNAME records at first.
 
 Reason:
 
@@ -2253,7 +2294,21 @@ Reason:
 - Cloudflare only handles DNS.
 - Troubleshooting is much easier.
 
+Important distinction:
+
+| Record type | Recommended proxy status |
+|---|---|
+| ACM certificate validation CNAME | DNS only |
+| AWS domain ownership validation CNAME | DNS only |
+| Website CNAME pointing to CloudFront | DNS only at first; proxying is optional later |
+
 Later, you can experiment with Cloudflare proxying if you want. If you turn on the orange cloud, you are putting Cloudflare in front of CloudFront, which means you are stacking one CDN/proxy in front of another CDN. That can work, but it adds more moving parts.
+
+If Cloudflare proxying is enabled later, the path becomes:
+
+```text
+Visitor → Cloudflare proxy → CloudFront → S3
+```
 
 If you proxy through Cloudflare later, use Cloudflare SSL/TLS mode:
 
@@ -2263,9 +2318,35 @@ Full (strict)
 
 and make sure CloudFront still has a valid certificate for the hostname.
 
----
+### Optional: apex/root domain in Cloudflare
+
+For this guide, the final hostnames are subdomains:
+
+```text
+calculator.jeffskone.com
+calc.jeffskone.com
+```
+
+If you later want the apex/root domain, such as:
+
+```text
+jeffskone.com
+```
+
+Cloudflare supports CNAME flattening, so you can usually create a CNAME at the root using:
+
+```text
+Type: CNAME
+Name: @
+Target: <DISTRIBUTION_DOMAIN>
+Proxy status: DNS only at first
+TTL: Auto
+```
+
+Use the CloudFront distribution domain name as the target, not the S3 bucket name, not the S3 website endpoint, not the CloudFront distribution ID, and not CloudFront IP addresses.
 
 ---
+
 
 ## 21. Track B: Test the final HTTPS custom domains
 
@@ -2317,7 +2398,6 @@ You should see the names resolving toward CloudFront.
 
 ---
 
----
 
 ## 22. Final access expectations and URL behavior
 
@@ -2334,9 +2414,10 @@ Use this matrix to understand what should and should not work:
 |---|---:|---|
 | `https://calculator.jeffskone.com` | Yes | Primary final URL. |
 | `https://calc.jeffskone.com` | Yes | Short alias final URL. |
-| `https://<DISTRIBUTION_DOMAIN>` | Yes by default | CloudFront provides this domain for every distribution. You can block it only with optional advanced Host-header logic. |
-| `http://<bucket>.s3-website-us-west-2.amazonaws.com` | No, if bucket is private | This should stop working after public access is removed. |
-| Direct S3 object URL | No, if bucket is private | CloudFront should be the access path. |
+| `https://<DISTRIBUTION_DOMAIN>` | Yes by default | CloudFront provides this domain for every distribution. You can optionally block it with a CloudFront Function. |
+| `http://<bucket>.s3-website-us-west-2.amazonaws.com` | No | For the recommended final setup, S3 Static website hosting should be disabled or direct website endpoint access should be blocked. |
+| `https://<bucket>.s3.us-west-2.amazonaws.com/index.html` | No | Direct S3 object URLs should not be publicly readable when the bucket is private. |
+| CloudFront to S3 through OAC | Yes | CloudFront should be the authorized reader of the private bucket. |
 
 For the final recommended setup, the S3 website endpoint should not be the public site anymore.
 
@@ -2381,7 +2462,602 @@ This guide does not make that restriction part of the main path because it adds 
 
 ---
 
-## 23. Updating the website after setup
+## 23. Access control deep dive: S3, CloudFront, and custom domains
+
+This section explains the access-control model in more detail. It is especially useful if you are trying to answer questions like:
+
+```text
+Should S3 Static website hosting be enabled or disabled?
+Should the S3 website endpoint work?
+Should the CloudFront standard domain work?
+Should the bucket policy be blank?
+Where do I set the default page?
+How do I block direct CloudFront-domain access if I want only my custom domain to work?
+```
+
+### Terminology: four different URLs or access paths
+
+There are several similar-sounding access paths. Keep them separate:
+
+| Name | Example | What it means |
+|---|---|---|
+| Custom domain | `https://calculator.jeffskone.com` | The final public URL you want visitors to use. |
+| CloudFront standard domain | `https://d111111abcdef8.cloudfront.net/` | The default `*.cloudfront.net` hostname AWS gives every distribution. |
+| S3 website endpoint | `http://jefsko-calculator-site.s3-website-us-west-2.amazonaws.com/` | The public website endpoint created when S3 Static website hosting is enabled. |
+| Direct S3 object URL | `https://jefsko-calculator-site.s3.us-west-2.amazonaws.com/index.html` | A direct request to an S3 object through the normal S3 REST endpoint. |
+
+When the goal is “block direct S3 access,” you usually mean both of these should not be publicly usable:
+
+- S3 website endpoint.
+- Direct S3 object URL.
+
+CloudFront should be the only authorized public path to the objects.
+
+### Recommended final state
+
+For the secure, modern CloudFront + private S3 setup, use this final state:
+
+| Area | Recommended state |
+|---|---|
+| S3 Static website hosting | Disabled, unless intentionally needed |
+| S3 Block Public Access | Enabled |
+| Public-read bucket policy | Removed |
+| OAC | Enabled |
+| Bucket policy | Allows only the CloudFront distribution through OAC |
+| CloudFront origin | Normal S3 bucket origin |
+| CloudFront Default root object | `index.html` |
+| Cloudflare DNS | Website CNAME points to CloudFront |
+| CloudFront standard domain | Works by default; optionally blocked with a CloudFront Function |
+
+Plain-English version:
+
+```text
+S3 stores the files privately.
+CloudFront is the public web server/CDN.
+OAC is CloudFront's permission pass to read the private S3 bucket.
+Cloudflare DNS points the custom domain to CloudFront.
+```
+
+### S3 website endpoint vs. S3 bucket origin
+
+An **S3 website endpoint** is created when S3 Static website hosting is enabled.
+
+Example:
+
+```text
+http://jefsko-calculator-site.s3-website-us-west-2.amazonaws.com/
+```
+
+An **S3 bucket origin** is the normal S3 bucket endpoint CloudFront uses for private-bucket access.
+
+Example:
+
+```text
+jefsko-calculator-site.s3.us-west-2.amazonaws.com
+```
+
+| Feature | S3 website endpoint | S3 bucket origin |
+|---|---:|---:|
+| Requires S3 Static website hosting | Yes | No |
+| Supports direct S3 website index/error behavior | Yes | No |
+| Supports direct HTTPS from S3 website endpoint | No | Not a website endpoint; CloudFront handles HTTPS |
+| Can use CloudFront OAC/OAI | No | Yes |
+| Bucket can stay private | No, not for public website endpoint access | Yes |
+| Recommended for this guide's final setup | No | Yes |
+
+Quick origin check:
+
+```text
+s3-website in the origin domain = S3 website endpoint
+s3.<region>.amazonaws.com = normal S3 bucket origin
+```
+
+For this guide's recommended setup, choose the normal S3 bucket origin and OAC.
+
+### OAC vs. OAI
+
+OAC means **Origin Access Control**.
+
+OAI means **Origin Access Identity**.
+
+| Feature | OAC | OAI |
+|---|---:|---:|
+| Modern recommended method | Yes | No |
+| Legacy method | No | Yes |
+| Works with normal S3 bucket origin | Yes | Yes |
+| Works with S3 website endpoint | No | No |
+| Supports newer S3 capabilities better | Yes | Limited |
+| Recommended for new setup | Yes | No |
+
+Use OAC for new or cleaned-up setups.
+
+### How to confirm or fix the CloudFront origin
+
+For an existing distribution:
+
+1. Go to **AWS Console → CloudFront**.
+2. Choose **Distributions**.
+3. Open the distribution.
+4. Go to **Origins**.
+5. Select the S3 origin.
+6. Choose **Edit**.
+7. Confirm the **Origin domain** is a normal S3 bucket origin, not an `s3-website` endpoint.
+8. Under **Origin access**, choose **Origin access control settings** or the closest current UI label.
+9. Select an existing OAC or create a new one.
+10. Use signing behavior similar to:
+
+```text
+Sign requests / Sign requests (recommended)
+```
+
+11. Save changes.
+12. Update the S3 bucket policy with the OAC allow statement.
+13. Wait for CloudFront deployment to complete.
+
+To create an OAC separately:
+
+1. Go to **AWS Console → CloudFront**.
+2. In the left navigation, choose **Origin access**.
+3. Choose **Create control setting**.
+4. Name it clearly, for example:
+
+```text
+oac-calculator-site-s3
+```
+
+5. Set origin type to:
+
+```text
+S3
+```
+
+6. Keep signing behavior as:
+
+```text
+Sign requests (recommended)
+```
+
+7. Create the OAC.
+8. Attach it to the S3 origin in the CloudFront distribution.
+9. Apply the corresponding S3 bucket policy.
+
+### Bucket policy: blank or not?
+
+For the recommended OAC setup, the bucket policy usually should **not** be blank.
+
+It should contain a policy that allows only the specific CloudFront distribution to read objects.
+
+Example read-only OAC bucket policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowCloudFrontServicePrincipalReadOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "cloudfront.amazonaws.com"
+      },
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::jefsko-calculator-site/*",
+      "Condition": {
+        "StringEquals": {
+          "AWS:SourceArn": "arn:aws:cloudfront::<ACCOUNT_ID>:distribution/<DISTRIBUTION_ID>"
+        }
+      }
+    }
+  ]
+}
+```
+
+Replace:
+
+```text
+<ACCOUNT_ID>
+<DISTRIBUTION_ID>
+```
+
+with your actual AWS account ID and CloudFront distribution ID.
+
+For a read-only static site, `s3:GetObject` is usually sufficient.
+
+A blank bucket policy may work only if another mechanism is granting access, such as public access, ACLs, or a legacy OAI policy. For a clean modern OAC setup, the policy should explicitly allow CloudFront and should not allow public access.
+
+### CloudFront Default root object vs. S3 index document
+
+When S3 Static website hosting is disabled, configure the default page in CloudFront.
+
+CloudFront calls this the **Default root object**.
+
+This controls what CloudFront returns when someone requests the root path:
+
+```text
+https://calculator.jeffskone.com/
+```
+
+Recommended value:
+
+```text
+index.html
+```
+
+To set it:
+
+1. Go to **AWS Console → CloudFront**.
+2. Choose **Distributions**.
+3. Open the distribution.
+4. Go to the **General** tab.
+5. Choose **Edit**.
+6. Find **Default root object**.
+7. Enter:
+
+```text
+index.html
+```
+
+8. Save changes and wait for deployment.
+
+You can use a different default file if you really want to, such as:
+
+```text
+home.html
+main.html
+app.html
+```
+
+But if you do, the file must actually exist in S3 and the guide examples should be adjusted. For this guide, keep `index.html`.
+
+Important difference:
+
+| Request | CloudFront Default root object behavior | S3 website index document behavior |
+|---|---|---|
+| `/` | Can return `/index.html` | Can return `/index.html` |
+| `/about/` | Does not automatically return `/about/index.html` by default | Can return `/about/index.html` if that object exists |
+| `/docs/` | Does not automatically return `/docs/index.html` by default | Can return `/docs/index.html` if that object exists |
+
+CloudFront Default root object handles the distribution root. It does not automatically reproduce all S3 website folder-index behavior.
+
+### Optional: clean subdirectory URL rewrite
+
+If your site uses clean URLs such as:
+
+```text
+/about/
+/docs/
+/contact/
+```
+
+and you want those to map to:
+
+```text
+/about/index.html
+/docs/index.html
+/contact/index.html
+```
+
+you can use a CloudFront Function on the **viewer request** event.
+
+For the simple calculator site in this guide, you probably do not need this. You only need it if the site has subdirectory `index.html` files or single-page-app routing needs.
+
+Example rewrite-only CloudFront Function:
+
+```javascript
+function handler(event) {
+    var request = event.request;
+    var uri = request.uri;
+
+    if (uri.endsWith('/')) {
+        request.uri += 'index.html';
+    } else if (!uri.includes('.')) {
+        request.uri += '/index.html';
+    }
+
+    return request;
+}
+```
+
+### CloudFront custom error responses
+
+When S3 Static website hosting is disabled, S3 website error document settings no longer apply. Use CloudFront **Custom error responses** instead.
+
+For a normal static site with a custom 404 page:
+
+1. Upload `404.html` to the S3 bucket.
+2. Go to **AWS Console → CloudFront**.
+3. Choose **Distributions**.
+4. Open the distribution.
+5. Go to **Error Pages**.
+6. Choose **Create Custom Error Response**.
+7. Set **HTTP error code** to:
+
+```text
+404: Not Found
+```
+
+8. Set **Customize error response** to **Yes**.
+9. Set **Response page path** to:
+
+```text
+/404.html
+```
+
+10. Set **HTTP response code** to:
+
+```text
+404: Not Found
+```
+
+11. Set **Error caching minimum TTL** to a modest value, such as:
+
+```text
+10
+```
+
+or:
+
+```text
+60
+```
+
+12. Create/save the custom error response.
+
+For a single-page app where paths like `/dashboard` should return `index.html`, create custom error responses for both `403` and `404`:
+
+```text
+HTTP error code: 403
+Customize error response: Yes
+Response page path: /index.html
+HTTP response code: 200
+Error caching minimum TTL: 0 or 10
+```
+
+Repeat for:
+
+```text
+HTTP error code: 404
+```
+
+Why include `403`? With private S3 origins, missing objects can sometimes surface as `403 Access Denied` rather than `404 Not Found`, especially if the requester does not have permission to list the bucket. Handling both `403` and `404` is common for SPA fallback behavior.
+
+### CloudFront standard domain: should it be blocked?
+
+By default, this usually works:
+
+```text
+https://<DISTRIBUTION_DOMAIN>/
+```
+
+Example:
+
+```text
+https://d111111abcdef8.cloudfront.net/
+```
+
+That does not mean S3 is public. It means CloudFront is serving the site through its standard AWS-provided hostname.
+
+Blocking the CloudFront standard domain is optional.
+
+| Question | Answer |
+|---|---|
+| Is blocking the CloudFront standard domain required? | No. |
+| Is it standard for small static sites? | Usually no. |
+| Is it sometimes done? | Yes, when you want only approved custom hostnames to work. |
+| Does the ACM certificate block the standard domain? | No. |
+| Does pointing DNS to CloudFront block the standard domain? | No. |
+
+Reasons someone might block it:
+
+- Branding: users should only see the custom domain.
+- Canonical URL control: avoid duplicate access paths.
+- Cleanup/security preference: reduce unexpected public hostnames.
+- Policy requirement: only approved hostnames should work.
+
+For this guide, leave it alone unless you specifically want the extra restriction.
+
+### CloudFront Function: block the standard domain only
+
+Use this if you want only the custom hostnames to work.
+
+Replace the example hostnames with your real allowed custom domains.
+
+```javascript
+function handler(event) {
+    var request = event.request;
+    var host = request.headers.host.value.toLowerCase();
+
+    var allowedHosts = {
+        "calculator.jeffskone.com": true,
+        "calc.jeffskone.com": true
+    };
+
+    if (!allowedHosts[host]) {
+        return {
+            statusCode: 403,
+            statusDescription: "Forbidden"
+        };
+    }
+
+    return request;
+}
+```
+
+Expected behavior:
+
+```text
+https://calculator.jeffskone.com/      → works
+https://calc.jeffskone.com/            → works
+https://d111111abcdef8.cloudfront.net/ → 403 Forbidden
+```
+
+### CloudFront Function: block standard domain and rewrite clean URLs
+
+Use this if both are needed:
+
+1. Block direct use of the CloudFront standard domain.
+2. Rewrite `/about/` to `/about/index.html`.
+3. Rewrite `/about` to `/about/index.html`.
+
+```javascript
+function handler(event) {
+    var request = event.request;
+    var host = request.headers.host.value.toLowerCase();
+
+    var allowedHosts = {
+        "calculator.jeffskone.com": true,
+        "calc.jeffskone.com": true
+    };
+
+    // Block direct access through the CloudFront standard domain.
+    if (!allowedHosts[host]) {
+        return {
+            statusCode: 403,
+            statusDescription: "Forbidden"
+        };
+    }
+
+    // Optional clean-URL rewrite:
+    // /about/ -> /about/index.html
+    // /about  -> /about/index.html
+    var uri = request.uri;
+
+    if (uri.endsWith('/')) {
+        request.uri += 'index.html';
+    } else if (!uri.includes('.')) {
+        request.uri += '/index.html';
+    }
+
+    return request;
+}
+```
+
+Do not attach separate competing viewer-request functions for the same behavior. If you need both host blocking and clean-URL rewriting, combine the logic into one CloudFront Function.
+
+### Step-by-step: create and associate the CloudFront Function
+
+1. Identify the allowed hostnames:
+
+```text
+calculator.jeffskone.com
+calc.jeffskone.com
+```
+
+2. Go to **AWS Console → CloudFront**.
+3. In the left navigation, choose **Functions**.
+4. Choose **Create function**.
+5. Give it a clear name, such as:
+
+```text
+allow-only-calculator-custom-domains
+```
+
+6. Paste the function code.
+7. Save the function.
+8. Test the function in the CloudFront console if the UI provides a test option.
+9. Publish the function.
+10. Open the CloudFront distribution.
+11. Go to **Behaviors**.
+12. Select the default behavior.
+13. Choose **Edit**.
+14. Find **Function associations**.
+15. Associate the function with:
+
+```text
+Viewer request
+```
+
+16. Save changes.
+17. Wait for deployment.
+18. Test both custom domains and the CloudFront standard domain.
+
+### Verification commands
+
+Replace example values with your real values.
+
+Test the custom domains:
+
+```bash
+curl -I https://calculator.jeffskone.com/
+curl -I https://calc.jeffskone.com/
+```
+
+Expected:
+
+```text
+HTTP/2 200
+```
+
+Test the CloudFront standard domain:
+
+```bash
+curl -I https://<DISTRIBUTION_DOMAIN>/
+```
+
+Expected if not blocked:
+
+```text
+HTTP/2 200
+```
+
+Expected if blocked with a CloudFront Function:
+
+```text
+HTTP/2 403
+```
+
+Test the S3 website endpoint:
+
+```bash
+curl -I http://jefsko-calculator-site.s3-website-us-west-2.amazonaws.com/
+```
+
+Expected for the final private setup:
+
+```text
+403 Forbidden
+```
+
+or another failure/disabled result, depending on whether S3 Static website hosting is disabled.
+
+Test a direct S3 object URL:
+
+```bash
+curl -I https://jefsko-calculator-site.s3.us-west-2.amazonaws.com/index.html
+```
+
+Expected for the private bucket:
+
+```text
+403 Forbidden
+```
+
+Test a missing page:
+
+```bash
+curl -I https://calculator.jeffskone.com/does-not-exist
+```
+
+Expected depends on your choice:
+
+- Normal static site: `404`.
+- SPA fallback: `200` with `/index.html`.
+- Private S3 without custom error mapping: possibly `403`.
+
+### Common misunderstandings
+
+| Misunderstanding | Correction |
+|---|---|
+| Static website means S3 Static website hosting must be enabled. | A site can be static while S3 Static website hosting is disabled. CloudFront can serve static files from a private S3 bucket origin. |
+| Disabling S3 Static website hosting disables my CloudFront website. | It disables the S3 website endpoint behavior only. CloudFront can still serve the site from the normal S3 bucket origin. |
+| Block Public Access alone controls everything. | Block Public Access prevents public S3 access, but CloudFront still needs permission through OAC and the bucket policy. |
+| The bucket policy should always be blank. | For OAC, the bucket policy usually should contain a specific allow statement for the CloudFront distribution. It should not contain public-read access. |
+| The ACM certificate blocks the CloudFront standard domain. | The ACM certificate enables HTTPS for the custom domain. It does not block `*.cloudfront.net` access. |
+| DNS pointing to CloudFront means the CloudFront standard domain must remain usable. | DNS can point to CloudFront while a CloudFront Function blocks direct requests to the CloudFront standard hostname based on the `Host` header. |
+| CloudFront Default root object behaves exactly like S3 website index document. | CloudFront Default root object handles `/`, but not subdirectories like `/about/`. Use a CloudFront Function if you need folder-style index behavior. |
+
+---
+
+## 24. Updating the website after setup
 
 When you change your website files, upload them again.
 
@@ -2429,9 +3105,8 @@ aws cloudfront create-invalidation --distribution-id <DISTRIBUTION_ID> --paths "
 
 ---
 
----
 
-## 24. Troubleshooting
+## 25. Troubleshooting
 
 ### Problem: S3 website endpoint says 403 Access Denied
 
@@ -2525,7 +3200,6 @@ Look at the final displayed hostname in Cloudflare and make sure it is correct.
 ---
 
 
-
 ### Problem: I requested the ACM certificate in `us-west-2`
 
 That is a common mistake.
@@ -2613,7 +3287,6 @@ For a tiny site, invalidating everything is simple and fine.
 
 ---
 
----
 
 ### Problem: I cannot find Viewer protocol policy or Allowed HTTP methods
 
@@ -2694,7 +3367,105 @@ If you want only the custom hostnames to work, use optional advanced Host-header
 
 ---
 
-## 25. Optional alternatives outside AWS
+
+### Problem: I disabled S3 Static website hosting and the custom domain still works
+
+That is expected if CloudFront is using the normal S3 bucket origin with OAC.
+
+Disabling S3 Static website hosting disables the S3 website endpoint. It does not delete files and does not disable CloudFront.
+
+Check:
+
+```text
+CloudFront > Distribution > Origins > Origin domain
+```
+
+If the origin looks like this, CloudFront is using the normal S3 bucket origin:
+
+```text
+jefsko-calculator-site.s3.us-west-2.amazonaws.com
+```
+
+That is the recommended final pattern.
+
+---
+
+### Problem: Direct S3 object URLs still work publicly
+
+A direct S3 object URL looks like this:
+
+```text
+https://jefsko-calculator-site.s3.us-west-2.amazonaws.com/index.html
+```
+
+For the final recommended setup, this should not be publicly readable.
+
+Check:
+
+1. S3 Block Public Access is enabled.
+2. The bucket policy does not contain a public `Principal: "*"` read statement.
+3. ACLs are disabled or not granting public read.
+4. The bucket policy contains only the CloudFront OAC allow statement, if needed.
+
+---
+
+### Problem: `/about/` does not load even though `/` works
+
+CloudFront Default root object handles the distribution root:
+
+```text
+/
+```
+
+It does not automatically map every subdirectory to an `index.html` file.
+
+If your site needs clean subdirectory URLs such as:
+
+```text
+/about/
+/docs/
+```
+
+use a CloudFront Function to rewrite those paths to:
+
+```text
+/about/index.html
+/docs/index.html
+```
+
+For the simple calculator site, this is usually not needed.
+
+---
+
+### Problem: Missing pages show `403` instead of `404`
+
+With a private S3 bucket origin, missing objects can sometimes appear as `403 Access Denied` instead of `404 Not Found` because public callers are not allowed to list or inspect the bucket.
+
+For a normal website, configure a CloudFront custom error response if you want a friendly `404.html` page.
+
+For a single-page app, configure CloudFront custom error responses for both `403` and `404` to return `/index.html` with HTTP status `200`.
+
+---
+
+### Problem: I cannot decide whether to block the CloudFront standard domain
+
+Blocking it is optional.
+
+Leave it alone if:
+
+- You want the simplest setup.
+- You want an easy CloudFront testing URL.
+- Duplicate access through `*.cloudfront.net` does not matter.
+
+Block it with a CloudFront Function if:
+
+- You only want approved custom hostnames to work.
+- You want cleaner canonical-domain behavior.
+- You are comfortable adding CloudFront Function logic.
+
+---
+
+## 26. Optional alternatives outside AWS
 
 This guide uses AWS because the goal is to host on AWS.
 
@@ -2808,9 +3579,8 @@ Use ACM unless you have a specific reason not to.
 
 ---
 
----
 
-## 26. Reference commands
+## 27. Reference commands
 
 These commands are optional. The AWS Console steps above are friendlier for beginners.
 
@@ -2991,9 +3761,8 @@ aws cloudfront create-invalidation --distribution-id <DISTRIBUTION_ID> --paths "
 
 ---
 
----
 
-## 27. Variables, ARNs, and placeholders reference
+## 28. Variables, ARNs, and placeholders reference
 
 Use this table when replacing placeholders in commands, policies, or examples.
 
@@ -3031,7 +3800,7 @@ When granting read access to website files, the object ARN pattern is usually th
 
 ---
 
-## 28. Recommended AWS tags
+## 29. Recommended AWS tags
 
 Tags are optional for this small project, but they are a good habit.
 
@@ -3057,7 +3826,7 @@ Do not put secrets, passwords, API keys, or sensitive personal information in ta
 
 ---
 
-## 29. AWS and Cloudflare console UI drift note
+## 30. AWS and Cloudflare console UI drift note
 
 AWS and Cloudflare console labels may change over time.
 
@@ -3076,7 +3845,7 @@ When in doubt, match the concept and reason, not only the exact label.
 
 ---
 
-## 30. Official references
+## 31. Official references
 
 AWS S3 static website hosting:
 
@@ -3270,9 +4039,96 @@ Cloudflare Pages custom domains:
 https://developers.cloudflare.com/pages/configuration/custom-domains/
 ```
 
+AWS S3 enabling website hosting:
+
+```text
+https://docs.aws.amazon.com/AmazonS3/latest/userguide/EnableWebsiteHosting.html
+```
+
+AWS S3 index document support:
+
+```text
+https://docs.aws.amazon.com/AmazonS3/latest/userguide/IndexDocumentSupport.html
+```
+
+AWS S3 website access permissions:
+
+```text
+https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteAccessPermissionsReqd.html
+```
+
+AWS CloudFront origins: S3 and custom origins:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html
+```
+
+AWS CloudFront default root object:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DefaultRootObject.html
+```
+
+AWS CloudFront custom error responses:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/GeneratingCustomErrorResponses.html
+```
+
+AWS CloudFront custom error pages procedure:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/custom-error-pages-procedure.html
+```
+
+AWS CloudFront Function URL rewrite example:
+
+```text
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/example_cloudfront_functions_url_rewrite_single_page_apps_section.html
+```
+
+Cloudflare CNAME flattening:
+
+```text
+https://developers.cloudflare.com/dns/cname-flattening/
+```
+
+Cloudflare CNAME/domain verification troubleshooting:
+
+```text
+https://developers.cloudflare.com/dns/manage-dns-records/troubleshooting/cname-domain-verification/
+```
+
+
 ---
 
-## 31. Changelog
+## 32. Changelog
+
+### v1.2.0 - 2026-07-01
+
+Additive access-control and CloudFront behavior update.
+
+Added:
+
+- Stronger final recommended access-control target state.
+- Clearer terminology for S3 website endpoint, S3 bucket origin, direct S3 object URL, and CloudFront standard distribution domain.
+- Expanded DNS guidance explaining that public website records should point to CloudFront, not S3.
+- Clarification that ACM validation CNAMEs should be DNS-only, while website CNAME proxying is optional after initial testing.
+- Guidance for Cloudflare apex/root CNAME flattening.
+- Expanded S3 Static website hosting enable/disable guidance for the private CloudFront + OAC pattern.
+- OAC vs. OAI explanation.
+- Step-by-step guidance for confirming or creating a regular S3 bucket origin with OAC.
+- CloudFront Default root object vs. S3 website index-document behavior.
+- Optional CloudFront Function examples for host blocking and clean-URL rewriting.
+- CloudFront custom error response guidance for normal 404 pages and SPA fallbacks.
+- Additional verification commands for custom domains, CloudFront standard domain, S3 website endpoint, direct S3 object URL, and missing-page behavior.
+- Additional troubleshooting entries.
+- Additional official AWS and Cloudflare references.
+
+Changed:
+
+- Cleaned repeated horizontal-rule formatting from the previous guide version.
+- Clarified that the clean final recommended setup disables S3 Static website hosting unless S3 website endpoint features are intentionally needed.
 
 ### v1.1.0 - 2026-07-01
 

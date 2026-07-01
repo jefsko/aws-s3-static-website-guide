@@ -23,6 +23,34 @@ Suggested meaning:
 
 - Nothing yet.
 
+## [1.2.0] - 2026-07-01
+
+### Added
+
+- Expanded access-control guidance for the recommended CloudFront + private S3 setup.
+- Clear terminology for S3 website endpoint, S3 bucket origin, direct S3 object URL, and CloudFront standard distribution domain.
+- Stronger final recommended state: S3 Static website hosting disabled unless intentionally needed, S3 Block Public Access enabled, and OAC bucket policy allowing only CloudFront.
+- Expanded Cloudflare DNS guidance explaining website CNAMEs, apex/root CNAME flattening, validation CNAMEs, DNS-only records, and optional Cloudflare proxying.
+- ACM certificate behavior clarification: the certificate enables HTTPS for custom domains but does not block the CloudFront standard domain.
+- OAC vs. OAI explanation.
+- Guidance for confirming or creating a regular S3 bucket origin with OAC.
+- CloudFront Default root object vs. S3 website folder-index behavior explanation.
+- Optional CloudFront Function examples for blocking the standard CloudFront domain and rewriting clean subdirectory URLs.
+- CloudFront custom error response guidance for normal `404.html` pages and single-page-app fallback behavior.
+- Additional verification commands for custom domains, CloudFront standard domain, S3 website endpoint, direct S3 object URLs, clean URLs, and missing pages.
+- Additional troubleshooting entries and official references.
+
+### Changed
+
+- Cleaned repeated horizontal-rule formatting from the prior guide file.
+- Clarified that public website DNS should point to CloudFront only for the recommended architecture.
+- Clarified that the final bucket policy should not contain public-read access and usually should contain the OAC allow statement.
+
+### Notes
+
+- This is an additive update from `v1.1.0`.
+- No existing version history was removed.
+
 ## [1.1.0] - 2026-07-01
 
 ### Added
