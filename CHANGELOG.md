@@ -23,6 +23,25 @@ Suggested meaning:
 
 - Nothing yet.
 
+## [1.2.1] - 2026-07-01
+
+### Added
+
+- Added `aws-s3-static-website-quick-start-guide-v1.2.1.md` as a quick-start companion guide for the recommended AWS S3 + CloudFront + ACM + Cloudflare setup.
+- Added `aws-s3-static-website-cheat-sheet-v1.2.1.md` as a compact repeat-use checklist for the same workflow.
+- Added README navigation showing which file to open first: quick-start guide, cheat sheet, or full guide.
+
+### Changed
+
+- Updated README repository contents to include the new supplemental documentation files.
+- Updated README version context to distinguish the `v1.2.1` documentation set from the unchanged `v1.2.0` full guide.
+
+### Notes
+
+- This is a supplemental patch release from `v1.2.0`.
+- The main full guide content was not changed for this release.
+- The supplemental files are intended to be tagged as `v1.2.1` in the repository.
+
 ## [1.2.0] - 2026-07-01
 
 ### Added

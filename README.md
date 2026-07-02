@@ -1,6 +1,6 @@
 # AWS S3 Static Website Quick Start
 
-A beginner-friendly quick start guide for hosting a simple static website on AWS using Amazon S3, CloudFront, AWS Certificate Manager, and Cloudflare DNS.
+A beginner-friendly documentation set for hosting a simple static website on AWS using Amazon S3, CloudFront, AWS Certificate Manager, and Cloudflare DNS.
 
 The example site is a small calculator website with three root-level files:
 
@@ -10,13 +10,27 @@ style.css
 calculator.js
 ```
 
-## Current guide version
+## Current documentation set version
+
+`v1.2.1`
+
+## Full guide version
 
 `v1.2.0`
 
+The main full guide was not changed for `v1.2.1`. This patch release adds supplemental quick-start and cheat-sheet documentation.
+
+## Which file should I open first?
+
+| Goal | Start here |
+|---|---|
+| I want the shortest practical walkthrough. | [`aws-s3-static-website-quick-start-guide-v1.2.1.md`](aws-s3-static-website-quick-start-guide-v1.2.1.md) |
+| I want a compact repeat checklist. | [`aws-s3-static-website-cheat-sheet-v1.2.1.md`](aws-s3-static-website-cheat-sheet-v1.2.1.md) |
+| I need the full explanation and troubleshooting. | [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md) |
+
 ## Main guide
 
-Start here:
+Full guide:
 
 [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md)
 
@@ -27,6 +41,13 @@ The guide uses shared S3 setup plus two paths:
 | Shared setup | Required baseline | Create the S3 bucket and upload the static files |
 | Track A | Minimal S3-only setup | Optional quick HTTP test using an S3 static website endpoint |
 | Track B | Recommended setup | HTTPS custom-domain setup using CloudFront, ACM, Cloudflare DNS, and private S3 bucket access |
+
+## Supplemental files added in v1.2.1
+
+| File | Purpose |
+|---|---|
+| `aws-s3-static-website-quick-start-guide-v1.2.1.md` | Shorter sequential setup guide for the recommended workflow |
+| `aws-s3-static-website-cheat-sheet-v1.2.1.md` | Compact checklist for repeat use after learning the workflow |
 
 ## Recommended final architecture
 
@@ -73,21 +94,6 @@ Important note:
 
 The S3 bucket can be in `us-west-2`, which is a good West Coast / Seattle-area default. However, the ACM certificate used by CloudFront must be requested in `us-east-1`.
 
-
-## What changed in v1.2.0
-
-Version `v1.2.0` is an additive access-control and CloudFront behavior update.
-
-It clarifies:
-
-- The recommended final setup uses a normal private S3 bucket origin with CloudFront OAC.
-- S3 Static website hosting should be disabled unless the S3 website endpoint is intentionally needed.
-- Public website DNS records in Cloudflare should point to CloudFront, not directly to S3.
-- ACM/domain validation CNAMEs should be DNS-only, while the website CNAME can stay DNS-only initially and optionally be proxied later.
-- The CloudFront standard distribution domain works by default and can optionally be blocked with a CloudFront Function.
-- CloudFront Default root object is not identical to S3 website folder-index behavior.
-- CloudFront custom error responses are the right place to configure `404.html` or SPA fallback behavior when using a private S3 bucket origin.
-
 ## Repository name and description
 
 Recommended repository name:
@@ -111,6 +117,8 @@ Recommended repo structure:
 ├── README.md
 ├── CHANGELOG.md
 ├── aws-s3-static-website-quick-start.md
+├── aws-s3-static-website-quick-start-guide-v1.2.1.md
+├── aws-s3-static-website-cheat-sheet-v1.2.1.md
 ├── index.html
 ├── style.css
 └── calculator.js
@@ -122,7 +130,9 @@ Current documentation files:
 |---|---|
 | `README.md` | Repo overview and starting point |
 | `CHANGELOG.md` | Version history and notable changes |
-| `aws-s3-static-website-quick-start.md` | Main setup guide |
+| `aws-s3-static-website-quick-start.md` | Full setup guide |
+| `aws-s3-static-website-quick-start-guide-v1.2.1.md` | Quick-start companion guide |
+| `aws-s3-static-website-cheat-sheet-v1.2.1.md` | Compact cheat sheet |
 
 Website files expected by the guide:
 
@@ -132,23 +142,13 @@ Website files expected by the guide:
 | `style.css` | Site styling |
 | `calculator.js` | Calculator behavior |
 
-## What this guide is for
+## What this documentation is for
 
-This guide is intended for a novice-to-advanced audience. It is written casually, but with explicit technical steps and examples.
+This documentation is intended for a novice-to-advanced audience. It is written casually, but with explicit technical steps and examples.
 
-It explains:
-
-- How to create an S3 bucket.
-- How to upload static website files.
-- How to enable S3 static website hosting for quick testing.
-- How S3 bucket names work.
-- When an S3 bucket must match a custom domain.
-- Why CloudFront is recommended for HTTPS.
-- Why CloudFront certificates must be requested in `us-east-1`.
-- How to request and validate an ACM certificate using Cloudflare DNS.
-- How to configure CloudFront for custom domains.
-- How to use CloudFront Origin Access Control so the S3 bucket can be private.
-- How to troubleshoot common setup problems.
+Use the quick-start guide when you want the fastest practical path.
+Use the cheat sheet when you already understand the flow and want a compact checklist.
+Use the full guide when you need the detailed explanations, reference sections, troubleshooting, or optional advanced topics.
 
 ## Versioning
 
@@ -167,18 +167,26 @@ Suggested meaning:
 2.0.0 = major restructure or change in recommended approach
 ```
 
+This release:
+
+```text
+1.2.1 = supplemental quick-start guide and cheat sheet added; full guide remains v1.2.0
+```
+
 See [`CHANGELOG.md`](CHANGELOG.md) for notable changes.
 
 ## Recommended first setup path
 
-For the first run, follow the guide in this order:
+For the first run, follow this order:
 
-1. Complete the shared setup: create the S3 bucket and upload the files.
-2. Optionally complete Track A if you want a quick HTTP-only S3 website endpoint test.
-3. Complete Track B to add CloudFront, HTTPS, the ACM certificate, and Cloudflare DNS.
-4. Make sure the S3 bucket is private once CloudFront is working.
-5. Disable S3 Static website hosting unless you intentionally need the S3 website endpoint.
-6. Use CloudFront/custom domains as the final public URLs.
+1. Open the quick-start guide.
+2. Complete the shared setup: create the S3 bucket and upload the files.
+3. Optionally complete Track A if you want a quick HTTP-only S3 website endpoint test.
+4. Complete Track B to add CloudFront, HTTPS, the ACM certificate, and Cloudflare DNS.
+5. Make sure the S3 bucket is private once CloudFront is working.
+6. Disable S3 Static website hosting unless you intentionally need the S3 website endpoint.
+7. Use CloudFront/custom domains as the final public URLs.
+8. Use the cheat sheet later as a repeat checklist.
 
 Final intended URLs:
 
@@ -189,7 +197,7 @@ https://calc.jeffskone.com
 
 ## Notes
 
-This guide assumes:
+This documentation assumes:
 
 - The AWS account already exists.
 - The domain is managed in Cloudflare.
