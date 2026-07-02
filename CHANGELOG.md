@@ -23,6 +23,20 @@ Suggested meaning:
 
 - Nothing yet.
 
+## [1.2.2] - 2026-07-01
+
+### Changed
+
+- Renamed the full setup guide reference from `aws-s3-static-website-quick-start.md` to `aws-s3-static-website-setup.md` after the repository file was renamed.
+- Updated README navigation and supplemental guide links to point to `aws-s3-static-website-setup.md`.
+- Updated supplemental quick-start guide and cheat-sheet version references from `v1.2.1` to `v1.2.2`.
+
+### Notes
+
+- This is a supplemental documentation patch release from `v1.2.1`.
+- The full guide content was not materially changed for this release.
+- The rename avoids confusion with the separate quick-start guide and cheat sheet.
+
 ## [1.2.1] - 2026-07-01
 
 ### Added

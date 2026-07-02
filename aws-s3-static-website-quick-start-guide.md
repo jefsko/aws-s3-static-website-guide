@@ -1,8 +1,8 @@
 # AWS S3 Static Website Quick-Start Guide
 
-**Version:** `v1.2.1`  
+**Version:** `v1.2.2`  
 **Supplement type:** Quick-start companion guide  
-**Based on full guide:** [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md)  
+**Based on full guide:** [`aws-s3-static-website-setup.md`](aws-s3-static-website-setup.md)  
 **Source guide version:** `v1.2.0`  
 **Recommended path:** Shared setup → Track B → CloudFront + HTTPS + private S3 bucket  
 **Best for:** Getting the calculator site online quickly using the recommended CloudFront/OAC architecture.
@@ -576,4 +576,4 @@ Use the full guide when you need:
 - Custom error responses.
 - Troubleshooting and reference commands.
 
-Full guide: [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md)
+Full guide: [`aws-s3-static-website-setup.md`](aws-s3-static-website-setup.md)

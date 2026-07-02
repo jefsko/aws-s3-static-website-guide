@@ -1,6 +1,6 @@
 # AWS S3 Static Website Quick Start
 
-**Filename:** `aws-s3-static-website-quick-start.md`  
+**Filename:** `aws-s3-static-website-setup.md`  
 **Version:** `v1.2.0`  
 **Last updated:** 2026-07-01  
 **Primary AWS Region for the S3 bucket:** `us-west-2` — US West (Oregon)  

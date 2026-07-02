@@ -1,9 +1,9 @@
 # AWS S3 Static Website Cheat Sheet
 
-**Version:** `v1.2.1`  
+**Version:** `v1.2.2`  
 **Supplement type:** Cheat sheet  
-**Full guide:** [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md)  
-**Quick-start guide:** [`aws-s3-static-website-quick-start-guide-v1.2.1.md`](aws-s3-static-website-quick-start-guide-v1.2.1.md)  
+**Full guide:** [`aws-s3-static-website-setup.md`](aws-s3-static-website-setup.md)  
+**Quick-start guide:** [`aws-s3-static-website-quick-start-guide-v1.2.2.md`](aws-s3-static-website-quick-start-guide-v1.2.2.md)  
 **Source guide version:** `v1.2.0`
 
 ## Path

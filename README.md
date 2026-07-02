@@ -12,27 +12,27 @@ calculator.js
 
 ## Current documentation set version
 
-`v1.2.1`
+`v1.2.2`
 
 ## Full guide version
 
 `v1.2.0`
 
-The main full guide was not changed for `v1.2.1`. This patch release adds supplemental quick-start and cheat-sheet documentation.
+The main full guide content was not changed for `v1.2.2`; only its repository filename changed. This patch release updates supplemental documentation links after the full guide filename was renamed.
 
 ## Which file should I open first?
 
 | Goal | Start here |
 |---|---|
-| I want the shortest practical walkthrough. | [`aws-s3-static-website-quick-start-guide-v1.2.1.md`](aws-s3-static-website-quick-start-guide-v1.2.1.md) |
-| I want a compact repeat checklist. | [`aws-s3-static-website-cheat-sheet-v1.2.1.md`](aws-s3-static-website-cheat-sheet-v1.2.1.md) |
-| I need the full explanation and troubleshooting. | [`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md) |
+| I want the shortest practical walkthrough. | [`aws-s3-static-website-quick-start-guide-v1.2.2.md`](aws-s3-static-website-quick-start-guide-v1.2.2.md) |
+| I want a compact repeat checklist. | [`aws-s3-static-website-cheat-sheet-v1.2.2.md`](aws-s3-static-website-cheat-sheet-v1.2.2.md) |
+| I need the full explanation and troubleshooting. | [`aws-s3-static-website-setup.md`](aws-s3-static-website-setup.md) |
 
 ## Main guide
 
 Full guide:
 
-[`aws-s3-static-website-quick-start.md`](aws-s3-static-website-quick-start.md)
+[`aws-s3-static-website-setup.md`](aws-s3-static-website-setup.md)
 
 The guide uses shared S3 setup plus two paths:
 
@@ -42,12 +42,12 @@ The guide uses shared S3 setup plus two paths:
 | Track A | Minimal S3-only setup | Optional quick HTTP test using an S3 static website endpoint |
 | Track B | Recommended setup | HTTPS custom-domain setup using CloudFront, ACM, Cloudflare DNS, and private S3 bucket access |
 
-## Supplemental files added in v1.2.1
+## Supplemental files updated in v1.2.2
 
 | File | Purpose |
 |---|---|
-| `aws-s3-static-website-quick-start-guide-v1.2.1.md` | Shorter sequential setup guide for the recommended workflow |
-| `aws-s3-static-website-cheat-sheet-v1.2.1.md` | Compact checklist for repeat use after learning the workflow |
+| `aws-s3-static-website-quick-start-guide-v1.2.2.md` | Shorter sequential setup guide for the recommended workflow |
+| `aws-s3-static-website-cheat-sheet-v1.2.2.md` | Compact checklist for repeat use after learning the workflow |
 
 ## Recommended final architecture
 
@@ -116,9 +116,9 @@ Recommended repo structure:
 /
 ├── README.md
 ├── CHANGELOG.md
-├── aws-s3-static-website-quick-start.md
-├── aws-s3-static-website-quick-start-guide-v1.2.1.md
-├── aws-s3-static-website-cheat-sheet-v1.2.1.md
+├── aws-s3-static-website-setup.md
+├── aws-s3-static-website-quick-start-guide-v1.2.2.md
+├── aws-s3-static-website-cheat-sheet-v1.2.2.md
 ├── index.html
 ├── style.css
 └── calculator.js
@@ -130,9 +130,9 @@ Current documentation files:
 |---|---|
 | `README.md` | Repo overview and starting point |
 | `CHANGELOG.md` | Version history and notable changes |
-| `aws-s3-static-website-quick-start.md` | Full setup guide |
-| `aws-s3-static-website-quick-start-guide-v1.2.1.md` | Quick-start companion guide |
-| `aws-s3-static-website-cheat-sheet-v1.2.1.md` | Compact cheat sheet |
+| `aws-s3-static-website-setup.md` | Full setup guide |
+| `aws-s3-static-website-quick-start-guide-v1.2.2.md` | Quick-start companion guide |
+| `aws-s3-static-website-cheat-sheet-v1.2.2.md` | Compact cheat sheet |
 
 Website files expected by the guide:
 
